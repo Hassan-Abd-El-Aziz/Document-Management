@@ -1,0 +1,41 @@
+/* RTL/LTR shared logical-property rules. Most layout uses inset-inline / text-align:start,
+   so the app adapts automatically. This file holds a few extra refinements. */
+
+[dir='rtl'] .brand-text { text-align: right; }
+[dir='rtl'] .page-title { text-align: right; }
+[dir='rtl'] .table thead th { text-align: right; }
+[dir='rtl'] .table tbody td { text-align: right; }
+[dir='rtl'] .field-label { text-align: right; }
+
+[dir='ltr'] .brand-text { text-align: left; }
+[dir='ltr'] .page-title { text-align: left; }
+[dir='ltr'] .table thead th { text-align: left; }
+[dir='ltr'] .table tbody td { text-align: left; }
+[dir='ltr'] .field-label { text-align: left; }
+
+/* keep LTR numbers readable regardless of direction */
+input, .stat-value, .badge, .chart-label, .notif-time, code {
+  direction: ltr;
+  unicode-bidi: embed;
+  text-align: start;
+}
+
+/* in RTL, numbers inside Arabic sentences stay LTR */
+[dir='rtl'] .cell-soft, [dir='rtl'] .stat-label, [dir='rtl'] .badge {
+  unicode-bidi: plaintext;
+}
+
+.menu-open .sidebar {
+  transform: translateX(0);
+}
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed; inset-block: 0; inset-inline-start: 0;
+    transform: translateX(-100%);
+    transition: transform .25s;
+  }
+  [dir='rtl'] .sidebar { transform: translateX(100%); }
+  .menu-open .sidebar { transform: translateX(0); }
+  .menu-toggle { display: grid; }
+  .menu-overlay.show { display: block; }
+}

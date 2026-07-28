@@ -1,0 +1,17 @@
+electron
+realm
+electron-builder
+electron-store
+fs-extra
+archiver
+extract-zip
+node-cron
+uuid
+dayjs
+sharp
+pdf-lib
+xlsx
+mammoth
+pdf-parse
+chokidar
+dotenv

@@ -1,0 +1,61 @@
+{
+  "name": "egypt-gulf-dms",
+  "productName": "Egypt Gulf Document Management System",
+  "version": "1.0.0",
+  "description": "Modern, offline-first desktop document management system for corporate archives, correspondence and departments.",
+  "author": "Egypt Gulf",
+  "license": "MIT",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "lint": "node --check main.js && node --check preload.js"
+  },
+  "dependencies": {
+    "archiver": "^6.0.1",
+    "dayjs": "^1.11.10",
+    "electron-store": "^8.2.0",
+    "extract-zip": "^2.0.1",
+    "fs-extra": "^11.2.0",
+    "mammoth": "^1.7.2",
+    "node-cron": "^3.0.3",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^1.1.1",
+    "realm": "^12.0.0",
+    "sharp": "^0.33.0",
+    "uuid": "^9.0.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.egyptgulf.dms",
+    "productName": "Egypt Gulf DMS",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/.cache",
+      "!*.log"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icons/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icons/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icons/icon.png"
+    },
+    "npmRebuild": true
+  }
+}

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+userData/
+*.log
+.DS_Store
+*.zip

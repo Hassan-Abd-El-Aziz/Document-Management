@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Egypt Gulf Document Management System</title>
+  <link rel="stylesheet" href="assets/css/base.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/animations.css" />
+  <link rel="stylesheet" href="assets/css/rtl.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">H</div>
+        <div class="brand-text">
+          <strong id="brandName" data-i18n="appName">H Document Management</strong>
+          <span id="brandSub" data-i18n="appSub">Document Management</span>
+        </div>
+      </div>
+      <nav id="nav" class="sidebar-nav"></nav>
+      <div class="sidebar-footer">
+        <div class="storage-meter" id="storageMeter"></div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header id="topbar" class="topbar">
+        <button class="icon-btn menu-toggle" id="menuToggle" aria-label="menu"></button>
+        <div class="topbar-search">
+          <input type="text" id="globalSearch" data-i18n-placeholder="searchPlaceholder" placeholder="Search..." />
+          <div id="searchResults" class="search-dropdown hidden"></div>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="langToggle" title="Language"></button>
+          <button class="icon-btn" id="themeToggle" title="Theme"></button>
+          <button class="icon-btn notif-btn" id="notifBtn" title="Notifications">
+            <span id="notifBadge" class="badge-count hidden">0</span>
+          </button>
+          <button class="user-chip" id="userChip"></button>
+        </div>
+      </header>
+
+      <main id="view" class="view"></main>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+  <div id="toastRoot" class="toast-root"></div>
+
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/theme.js"></script>
+  <script src="assets/js/components.js"></script>
+  <script src="assets/js/router.js"></script>
+  <script src="assets/js/helpers.js"></script>
+
+  <script src="pages/dashboard.js"></script>
+  <script src="pages/departments.js"></script>
+  <script src="pages/documents.js"></script>
+  <script src="pages/incoming.js"></script>
+  <script src="pages/outgoing.js"></script>
+  <script src="pages/letters.js"></script>
+  <script src="pages/recycle.js"></script>
+  <script src="pages/notifications.js"></script>
+  <script src="pages/reports.js"></script>
+  <script src="pages/backup.js"></script>
+  <script src="pages/lending.js"></script>
+  <script src="pages/users.js"></script>
+  <script src="pages/logs.js"></script>
+  <script src="pages/search.js"></script>
+  <script src="pages/emaillog.js"></script>
+  <script src="pages/settings.js"></script>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
