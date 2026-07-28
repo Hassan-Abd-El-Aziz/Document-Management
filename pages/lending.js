@@ -15,7 +15,6 @@ EG.pages.lending = {
       view.appendChild(C.pageHeader(t('lending'), [
         C.button(t('newLending'), { icon: 'plus', onClick: () => openForm() }),
         C.button(t('exportExcel'), { icon: 'download', variant: 'blue', onClick: () => exportAs('excel') }),
-        C.button(t('exportPDF'), { icon: 'download', variant: 'ghost', onClick: () => exportAs('pdf') }),
       ]));
 
       const searchRow = U.el('div', { style: 'display:flex;gap:10px;align-items:center;margin-bottom:18px' }, [
