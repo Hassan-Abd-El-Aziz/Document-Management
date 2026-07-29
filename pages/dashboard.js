@@ -19,17 +19,9 @@ EG.pages.dashboard = {
         C.statCard('outgoing', s.outgoing, t('outgoingLetters'), 'amber'),
         C.statCard('inbox', s.pendingLetters, t('pendingLetters'), 'amber'),
         C.statCard('check', s.deliveredLetters, t('deliveredLetters'), 'green'),
+        C.statCard('archive', s.borrowedLendings, t('borrowedLendings'), 'red'),
         C.statCard('bell', s.todayActivities, t('todayActivities'), 'blue'),
-        C.statCard('archive', s.storageUsage.usedMB + ' MB', t('storageUsage'), 'purple'),
       ], 'grid-4 stagger');
-
-      const es = await EG.api.emailLog.stats();
-      const emailGrid = C.grid([
-        C.statCard('email', es.total, t('emailTotal'), 'blue'),
-        C.statCard('attach', es.withAttachments, t('emailWithAttachments'), 'purple'),
-        C.statCard('bolt', es.pending, t('emailPending'), 'amber'),
-        C.statCard('check', es.sent, t('emailSent'), 'green'),
-      ], 'grid-4');
 
       const quick = C.card([
         U.el('div', { class: 'card-title', html: EG.icon('bolt', 18) + '<span>' + t('quickActions') + '</span>' }),
@@ -37,6 +29,7 @@ EG.pages.dashboard = {
           C.button(t('newDocument'), { icon: 'documents', onClick: () => EG.router.navigate('documents') }),
           C.button(t('newIncoming'), { icon: 'incoming', onClick: () => EG.router.navigate('incoming') }),
           C.button(t('newOutgoing'), { icon: 'outgoing', onClick: () => EG.router.navigate('outgoing') }),
+          C.button(t('newLending'), { icon: 'archive', onClick: () => EG.router.navigate('lending') }),
           C.button(t('newDepartment'), { icon: 'departments', onClick: () => EG.router.navigate('departments') }),
           C.button(t('createBackup'), { icon: 'backup', variant: 'blue', onClick: () => EG.router.navigate('backup') }),
           C.button(t('emaillog'), { icon: 'email', variant: 'blue', onClick: () => EG.router.navigate('emaillog') }),
@@ -104,7 +97,6 @@ EG.pages.dashboard = {
       ]);
 
       view.appendChild(grid);
-      view.appendChild(emailGrid);
       view.appendChild(C.grid([quick], ''));
       view.appendChild(C.grid([chartCard, donutCard], 'grid-2'));
       view.appendChild(C.grid([recentCard, logsCard, lendingCard], ''));

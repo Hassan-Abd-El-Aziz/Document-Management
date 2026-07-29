@@ -913,6 +913,9 @@ function buildDashboard() {
   const documents = realm.objects(COLLECTIONS.DOCUMENTS).filtered('deleted == false').length;
   const incoming = realm.objects(COLLECTIONS.INCOMING).filtered('deleted == false').length;
   const outgoing = realm.objects(COLLECTIONS.OUTGOING).filtered('deleted == false').length;
+  const totalLendings = realm.objects(COLLECTIONS.LENDING).filtered('deleted == false').length;
+  const returnedLendings = realm.objects(COLLECTIONS.LENDING).filtered('deleted == false AND lendingType == $0', 'returned').length;
+  const borrowedLendings = totalLendings - returnedLendings;
   const pendingIn = realm.objects(COLLECTIONS.INCOMING).filtered('deleted == false AND deliveryStatus == $0', 'pending').length;
   const pendingOut = realm.objects(COLLECTIONS.OUTGOING).filtered('deleted == false AND deliveryStatus == $0', 'pending').length;
   const deliveredIn = realm.objects(COLLECTIONS.INCOMING).filtered('deleted == false AND deliveryStatus == $0', 'delivered').length;
@@ -936,7 +939,7 @@ function buildDashboard() {
 
   const storageUsage = computeStorage();
   return {
-    departments, documents, incoming, outgoing,
+    departments, documents, incoming, outgoing, borrowedLendings,
     pendingIn, pendingOut, deliveredIn, deliveredOut,
     pendingLetters: pendingIn + pendingOut,
     deliveredLetters: deliveredIn + deliveredOut,
