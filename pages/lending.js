@@ -11,59 +11,56 @@ EG.pages.lending = {
     const U = EG.utils, C = EG.components, t = (k) => EG.i18n.t(k);
     U.clear(view);
     try {
-      const items = await EG.api.lending.list('deleted == false', {});
+      const allItems = await EG.api.lending.list('deleted == false', {});
       view.appendChild(C.pageHeader(t('lending'), [
         C.button(t('newLending'), { icon: 'plus', onClick: () => openForm() }),
         C.button(t('exportExcel'), { icon: 'download', variant: 'blue', onClick: () => exportAs('excel') }),
       ]));
 
-      const searchRow = U.el('div', { style: 'display:flex;gap:10px;align-items:center;margin-bottom:18px' }, [
-        C.input('', { placeholder: t('searchByFileNumber') || 'بحث برقم الملف أو العنوان...', style: 'flex:1;max-width:400px', id: 'lendingSearch' }),
-        C.button(t('search'), { icon: 'search', variant: 'ghost', onClick: () => applySearch() }),
+      const borrowedCount = allItems.filter((l) => (l.lendingType || 'borrowed') === 'borrowed').length;
+      const returnedCount = allItems.filter((l) => (l.lendingType || 'borrowed') === 'returned').length;
+      view.appendChild(U.el('div', { style: 'display:flex;gap:12px;align-items:center;margin-bottom:18px;flex-wrap:wrap' }, [
+        C.statCard('archive', borrowedCount, t('borrowed'), 'amber'),
+        C.statCard('check', returnedCount, t('returned'), 'green'),
+      ]));
+
+      const filterRow = U.el('div', { style: 'display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap' }, [
+        C.select([
+          { value: '', label: t('all') || 'الكل' },
+          { value: 'borrowed', label: t('borrowed') || 'مستعار' },
+          { value: 'returned', label: t('returned') || 'مرتجع' },
+        ], '', { id: 'lendingStatusFilter', style: 'min-width:140px' }),
+        C.input('', { placeholder: t('searchByFileNumber') || 'بحث برقم الملف أو العنوان...', style: 'flex:1;min-width:220px;max-width:400px', id: 'lendingSearch' }),
+        C.button(t('search'), { icon: 'search', variant: 'ghost', onClick: () => renderPage() }),
       ]);
-      view.appendChild(searchRow);
+      view.appendChild(filterRow);
 
-      const active = items.filter((l) => l.status === 'borrowed' || l.status === 'reserved').length;
-      const overdue = items.filter((l) => l.status === 'overdue').length;
-      const underReview = items.filter((l) => l.status === 'under_review').length;
-      const missing = items.filter((l) => l.status === 'missing').length;
-      const inArchive = items.filter((l) => l.status === 'in_archive').length;
-      const archived = items.filter((l) => l.status === 'archived').length;
+      const statusEl = filterRow.querySelector('#lendingStatusFilter');
+      const searchEl = filterRow.querySelector('#lendingSearch');
 
-      const stats = U.el('div', { class: 'grid grid-4 stagger', style: 'margin-bottom:18px' }, [
-        C.statCard('inbox', active, t('activeLendings'), 'amber'),
-        C.statCard('clock', overdue, t('overdue'), 'red'),
-        C.statCard('search', underReview, t('underReview'), 'blue'),
-        C.statCard('archive', inArchive + archived, t('archivedItems'), 'green'),
-      ]);
-      view.appendChild(stats);
+      function renderPage() {
+        const q = (searchEl.value || '').trim().toLowerCase();
+        const status = statusEl.value;
+        let filtered = allItems.slice();
+        if (q) {
+          filtered = filtered.filter((l) => {
+            const fn = (l.itemReference || '').toLowerCase();
+            const title = (l.itemName || '').toLowerCase();
+            return fn.includes(q) || title.includes(q);
+          });
+        }
+        if (status === 'borrowed') {
+          filtered = filtered.filter((l) => (l.lendingType || 'borrowed') === 'borrowed');
+        } else if (status === 'returned') {
+          filtered = filtered.filter((l) => (l.lendingType || 'borrowed') === 'returned');
+        }
 
-      let lastItems = items;
-      let lastQuery = '';
-
-      function applySearch() {
-        const query = searchRow.querySelector('#lendingSearch').value.trim().toLowerCase();
-        lastQuery = query;
-        renderTable(items, query);
-      }
-
-      searchRow.querySelector('#lendingSearch').addEventListener('input', () => applySearch());
-
-      if (!items.length) { view.appendChild(C.emptyState('archive', t('emptyState'))); return; }
-
-      function renderTable(data, query) {
-        const filtered = query ? data.filter((l) => {
-          const fn = (l.itemReference || '').toLowerCase();
-          const title = (l.itemName || '').toLowerCase();
-          return fn.includes(query) || title.includes(query);
-        }) : data;
-        lastItems = filtered;
-
-        const existingTable = view.querySelector('.table-wrap');
-        if (existingTable) existingTable.remove();
+        view.querySelectorAll('.table-wrap, .empty-state').forEach((n) => n.remove());
 
         if (!filtered.length) {
-          view.appendChild(C.emptyState('search', t('noResults')));
+          const empty = C.emptyState('archive', t('emptyState'));
+          empty.classList.add('empty-state');
+          view.appendChild(empty);
           return;
         }
 
@@ -76,7 +73,7 @@ EG.pages.lending = {
                 d.approvalAttachment ? C.iconButton('eye', { title: t('preview'), onClick: () => showApprovalAttachment(d) }) : null,
                 C.iconButton('edit', { title: t('edit'), variant: 'action', onClick: () => openForm(d) }),
                 C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
-                  try { await EG.api.lending.del(d._id); C.toast(t('deleted')); applySearch(); } catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
+                  try { await EG.api.lending.del(d._id); C.toast(t('deleted')); } catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
                 }) }),
               ]);
               const approvalStatusLabel = d.approvalAttachment ? 'معتمد' : 'قيد الانتظار';
@@ -98,10 +95,26 @@ EG.pages.lending = {
         view.appendChild(table);
       }
 
-      renderTable(items, '');
+      renderPage();
+      statusEl.addEventListener('change', () => renderPage());
+      searchEl.addEventListener('input', () => renderPage());
 
       async function exportAs(type) {
-        const rows = lastItems.length ? lastItems : items;
+        const q = (searchEl.value || '').trim().toLowerCase();
+        const status = statusEl.value;
+        let rows = allItems.slice();
+        if (q) {
+          rows = rows.filter((l) => {
+            const fn = (l.itemReference || '').toLowerCase();
+            const title = (l.itemName || '').toLowerCase();
+            return fn.includes(q) || title.includes(q);
+          });
+        }
+        if (status === 'borrowed') {
+          rows = rows.filter((l) => (l.lendingType || 'borrowed') === 'borrowed');
+        } else if (status === 'returned') {
+          rows = rows.filter((l) => (l.lendingType || 'borrowed') === 'returned');
+        }
         if (!rows.length) { C.toast(t('emptyState'), 'error'); return; }
         const columns = [
           { key: 'itemReference', label: t('fileReference') },
@@ -125,7 +138,7 @@ EG.pages.lending = {
           lendDate: r.lendDate ? EG.utils.formatDate(r.lendDate, EG.state.lang) : '',
           returnDeadline: r.returnDeadline ? EG.utils.formatDate(r.returnDeadline, EG.state.lang) : '',
         }));
-        const titleText = t('lending') + (lastQuery ? ' - ' + lastQuery : '');
+        const titleText = t('lending') + (q ? ' - ' + q : '');
         const payload = {
           fileName: 'Lending-Report',
           title: { ar: titleText, en: titleText },
@@ -217,10 +230,13 @@ EG.pages.lending = {
       const currentLocation = C.input(record ? record.currentLocation : '', {});
       const lendDate = C.input(record && record.lendDate ? new Date(record.lendDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0], { type: 'date' });
       const returnDeadline = C.input(record && record.returnDeadline ? new Date(record.returnDeadline).toISOString().split('T')[0] : '', { type: 'date' });
+      const lendingType = C.select([
+        { value: 'borrowed', label: t('borrowed') || 'مستعار' },
+        { value: 'returned', label: t('returned') || 'مرجع' },
+      ], record ? (record.lendingType || 'borrowed') : 'borrowed', { id: 'lendingType' });
       const borrowPurpose = C.textarea(record ? record.borrowPurpose : '', {});
       const notes = C.textarea(record ? record.notes : '', {});
 
-      const statusEl = U.el('div', {});
       const notFoundMsg = U.el('div', { style: 'color:var(--red);font-size:12px;margin-top:4px;display:none', text: t('noItemFound') || 'لا يوجد عنصر بهذا الاسم' });
 
       itemReference.addEventListener('input', async () => {
@@ -264,6 +280,7 @@ EG.pages.lending = {
           C.fieldWrap(t('borrowerName'), borrowerName),
           C.fieldWrap(t('borrowerDepartment'), deptSel),
         ]),
+        C.fieldWrap(t('lendingType'), lendingType),
         C.fieldWrap(t('currentLocation'), currentLocation),
         U.el('div', { class: 'form-grid' }, [
           C.fieldWrap(t('lendDate'), lendDate),
@@ -287,6 +304,7 @@ EG.pages.lending = {
               currentLocation: currentLocation.value.trim() || deptSel.value,
               lendDate: lendDate.value || null,
               returnDeadline: returnDeadline.value || null,
+              lendingType: lendingType.value,
               borrowPurpose: borrowPurpose.value.trim(),
               notes: notes.value.trim(),
               approvalAttachment: approvalAttachmentPath || (record ? record.approvalAttachment : null),
@@ -298,7 +316,7 @@ EG.pages.lending = {
               } else {
                 await EG.api.lending.create(data);
               }
-              m.close(); C.toast(t('saved')); EG.router.navigate('lending');
+              m.close(); C.toast(t('saved')); EG.router.rerender();
             } catch (e2) { C.toast(EG.api.errMessage(e2), 'error'); }
           } }),
         ],

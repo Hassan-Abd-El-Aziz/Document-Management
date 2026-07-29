@@ -277,6 +277,7 @@ const LendingSchema = {
     returnInspectionNote: 'string?',
     notes: 'string?',
     borrowPurpose: 'string?',
+    lendingType: { type: 'string', default: 'borrowed' },
     approvalAttachment: 'string?',
     previousDocumentLocation: 'string?',
     history: 'LendingHistory[]',

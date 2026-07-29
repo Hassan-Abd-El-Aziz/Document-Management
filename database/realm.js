@@ -30,7 +30,7 @@ async function initDatabase() {
   realmInstance = await Realm.open({
     path: path.join(ROOT.realm, 'egypt-gulf.realm'),
     schema: schemas,
-    schemaVersion: 9,
+    schemaVersion: 10,
     migration: (oldRealm, newRealm) => {
       const oldVersion = oldRealm.schemaVersion;
       if (oldVersion < 7) {
@@ -68,6 +68,14 @@ async function initDatabase() {
         newRealm.write(() => {
           for (const lending of lendings) {
             lending.previousDocumentLocation = lending.previousDocumentLocation || null;
+          }
+        });
+      }
+      if (oldVersion < 10) {
+        const lendings = newRealm.objects('Lending');
+        newRealm.write(() => {
+          for (const lending of lendings) {
+            lending.lendingType = lending.lendingType || 'borrowed';
           }
         });
       }

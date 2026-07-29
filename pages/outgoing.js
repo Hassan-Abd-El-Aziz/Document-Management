@@ -55,13 +55,17 @@ EG.pages.outgoing = {
       letterDate.value = new Date().toISOString().split('T')[0];
 
       const currentYear = new Date().getFullYear();
-      const TYPE_LABEL = 'Out';
+      const TYPE_LABEL = 'OL';
       let letterNumber = existing ? (existing.letterNumber || '') : '';
       let yearPart = '', deptPart = '', seqPart = '000001';
 
       if (letterNumber) {
         const parts = letterNumber.split('-');
         if (parts.length >= 4 && parts[2] === TYPE_LABEL) {
+          yearPart = parts[0];
+          deptPart = parts[1];
+          seqPart = parts[3];
+        } else if (parts.length >= 4 && parts[2] === 'Out') {
           yearPart = parts[0];
           deptPart = parts[1];
           seqPart = parts[3];
@@ -172,12 +176,16 @@ EG.pages.outgoing = {
       const fileLabel = U.el('span', { class: 'cell-soft', text: filePath ? filePath.split(/[\\/]/).pop() : '' });
 
       const currentYear = new Date().getFullYear();
-      const TYPE_LABEL = 'Out';
+      const TYPE_LABEL = 'OL';
       const letterNumber = d.letterNumber || '';
       let yearPart = '', deptPart = '', seqPart = '000001';
       if (letterNumber) {
         const parts = letterNumber.split('-');
         if (parts.length >= 4 && parts[2] === TYPE_LABEL) {
+          yearPart = parts[0];
+          deptPart = parts[1];
+          seqPart = parts[3];
+        } else if (parts.length >= 4 && parts[2] === 'Out') {
           yearPart = parts[0];
           deptPart = parts[1];
           seqPart = parts[3];
@@ -196,14 +204,14 @@ EG.pages.outgoing = {
       const yearInput = C.input(yearPart, { style: 'width:70px;text-align:center', maxlength: '4' });
       const deptInput = C.input(deptPart, { style: 'width:90px;text-align:center', maxlength: '10' });
       const seqInput = C.input(seqPart, { style: 'width:110px;text-align:center', maxlength: '6' });
-      const typeLabel = U.el('span', { text: ' - Out - ', style: 'font-weight:bold;align-self:center' });
+      const typeLabel = U.el('span', { text: ' - OL - ', style: 'font-weight:bold;align-self:center' });
       const dash1 = U.el('span', { text: ' - ', style: 'align-self:center' });
 
       function composeLetterNumber() {
         const y = yearInput.value.trim() || String(currentYear);
         const d = deptInput.value.trim() || 'GEN';
         const s = String(parseInt(seqInput.value.replace(/\D/g, '') || '1', 10)).padStart(6, '0').slice(0, 6);
-        return `${y}-${d.toUpperCase()}-Out-${s}`;
+        return `${y}-${d.toUpperCase()}-OL-${s}`;
       }
 
       function updateFromParts() {

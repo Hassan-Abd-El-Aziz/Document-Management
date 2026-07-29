@@ -464,7 +464,10 @@ async function handle({ action, payload = {} }) {
         let maxSeq = 0;
         for (const item of items) {
           const parts = String(item.letterNumber || '').split('-');
-          if (parts.length >= 4 && parts[2] === 'Out') {
+          if (parts.length >= 4 && parts[2] === 'OL') {
+            const seq = parseInt(parts[3], 10);
+            if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+          } else if (parts.length >= 4 && parts[2] === 'Out') {
             const seq = parseInt(parts[3], 10);
             if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
           } else if (parts.length >= 3) {
@@ -473,7 +476,7 @@ async function handle({ action, payload = {} }) {
           }
         }
         const year = payload.year || dayjs().year();
-        return ok(`${year}-${deptCode}-Out-${String(maxSeq + 1).padStart(6, '0')}`);
+        return ok(`${year}-${deptCode}-OL-${String(maxSeq + 1).padStart(6, '0')}`);
       }
       case 'outgoing.create': {
         auth.requirePermission('outgoing:write');
@@ -651,6 +654,7 @@ async function handle({ action, payload = {} }) {
           returnInspectionNote: null,
           notes: payload.notes || '',
           borrowPurpose: payload.borrowPurpose || '',
+          lendingType: payload.lendingType || 'borrowed',
           approvalAttachment: payload.approvalAttachment || '',
           history,
           createdBy: session ? session.username : null,
