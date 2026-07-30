@@ -981,7 +981,7 @@ function buildDashboard() {
   const todayActivities = realm.objects(COLLECTIONS.LOGS).filtered('timestamp >= $0', today).length;
   const recentDocs = serializeList(realm.objects(COLLECTIONS.DOCUMENTS).filtered('deleted == false').sorted('createdAt', true).slice(0, 6));
   const recentLogs = serializeList(realm.objects(COLLECTIONS.LOGS).sorted('timestamp', true).slice(0, 8));
-  const lendingHistory = serializeList(realm.objects(COLLECTIONS.LENDING).filtered('deleted == false').sorted('createdAt', true).slice(0, 10));
+  const lendingHistory = serializeList(realm.objects(COLLECTIONS.LENDING).filtered('deleted == false AND lendingType == $0', 'borrowed').sorted('createdAt', true).slice(0, 10));
 
   const daily = [];
   for (let i = 6; i >= 0; i--) {
