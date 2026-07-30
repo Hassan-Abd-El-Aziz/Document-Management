@@ -29,6 +29,14 @@
 [data-anim='pop'] { animation: popIn .35s ease both; }
 [data-anim='slide'] { animation: slideIn .35s ease both; }
 
+.chart-bar-item {
+  transform-origin: bottom;
+  transition: height 0.7s ease;
+}
+.donut circle {
+  transition: stroke-dashoffset 0.9s ease;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }

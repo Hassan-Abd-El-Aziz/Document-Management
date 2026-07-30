@@ -24,13 +24,13 @@ EG.pages.incoming = {
               d.filePath ? C.iconButton('eye', { title: t('preview'), onClick: stop(() => openPreview(d)) }) : null,
               C.iconButton('edit', { title: t('edit'), variant: 'action', onClick: stop(() => openEdit(d)) }),
               C.iconButton('history', { title: t('history'), onClick: stop(() => openStatus(d)) }),
-              C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: stop(() => C.confirm(t('confirmDelete'), async () => {
+              EG.helpers.canDelete() ? C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: stop(() => C.confirm(t('confirmDelete'), async () => {
                 try {
                   await EG.api.incoming.remove(d._id);
                   C.toast(t('deleted'));
                   EG.router.navigate('incoming');
                 } catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
-              })) }),
+              })) }) : null,
             ]);
             return U.el('tr', { style: 'cursor:pointer', onclick: () => openStatus(d) }, [
               td(d.letterNumber, 'cell-title'), td(EG.utils.localize(d.subject, EG.state.lang)), td(d.fromEntity || '-'),
@@ -224,7 +224,7 @@ EG.pages.incoming = {
 
       const letterNumberRow = U.el('div', { style: 'display:flex;gap:6px;align-items:center;margin-bottom:6px' }, [
         yearInput, dash1, deptInput, typeLabel, seqInput,
-        U.el('span', { class: 'cell-soft', style: 'font-size:11px', text: 'Edit letter number if needed' }),
+        U.el('span', { class: 'cell-soft', style: 'font-size:11px', text: t('editLetterNumber') }),
       ]);
 
       const body = U.el('div', {}, [

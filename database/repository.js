@@ -8,6 +8,11 @@ function newId() {
   return new Realm.BSON.UUID();
 }
 
+function toRealmId(id) {
+  if (id instanceof Realm.BSON.UUID) return id;
+  try { return new Realm.BSON.UUID(String(id)); } catch (_) { return null; }
+}
+
 function prepareForWrite(collection, data) {
   const out = { ...data };
   if (out._id && !(out._id instanceof Realm.BSON.UUID)) {
@@ -30,7 +35,9 @@ function listCollection(collection, query = null, args = {}) {
 
 function getById(collection, id) {
   const realm = getRealm();
-  const objs = realm.objects(collection).filtered('_id == $0', new Realm.BSON.UUID(String(id)));
+  const uuidId = toRealmId(id);
+  if (!uuidId) return null;
+  const objs = realm.objects(collection).filtered('_id == $0', uuidId);
   if (objs.length === 0) return null;
   return serialize(objs[0]);
 }
@@ -48,7 +55,9 @@ function create(collection, data) {
 
 function update(collection, id, data) {
   const realm = getRealm();
-  const objs = realm.objects(collection).filtered('_id == $0', new Realm.BSON.UUID(String(id)));
+  const uuidId = toRealmId(id);
+  if (!uuidId) throw new Error('Record not found: ' + id);
+  const objs = realm.objects(collection).filtered('_id == $0', uuidId);
   if (objs.length === 0) throw new Error('Record not found: ' + id);
   let updated = null;
   realm.write(() => {
@@ -64,7 +73,9 @@ function update(collection, id, data) {
 
 function remove(collection, id) {
   const realm = getRealm();
-  const objs = realm.objects(collection).filtered('_id == $0', new Realm.BSON.UUID(String(id)));
+  const uuidId = toRealmId(id);
+  if (!uuidId) throw new Error('Record not found: ' + id);
+  const objs = realm.objects(collection).filtered('_id == $0', uuidId);
   if (objs.length === 0) throw new Error('Record not found: ' + id);
   realm.write(() => {
     realm.delete(objs[0]);

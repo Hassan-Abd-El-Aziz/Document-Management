@@ -160,6 +160,11 @@ EG.helpers = (function () {
     C.confirm(t('confirmDelete'), () => { onConfirm(); }, { title: t('delete') });
   }
 
+  function canDelete() {
+    const user = EG.state.user;
+    return user && user.role === 'admin';
+  }
+
   function crudPage(opts) {
     return async function (view) {
       U.clear(view);
@@ -175,5 +180,5 @@ EG.helpers = (function () {
     };
   }
 
-  return { filePick, deptOptions, tagEditor, statusSelect, prioritySelect, confirmDelete, crudPage, projectPicker, openProjectForm };
+  return { filePick, deptOptions, tagEditor, statusSelect, prioritySelect, confirmDelete, canDelete, crudPage, projectPicker, openProjectForm };
 })();

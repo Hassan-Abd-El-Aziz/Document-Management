@@ -179,19 +179,29 @@ EG.components = (function () {
   function barChart(data, opts = {}) {
     const max = Math.max(1, ...data.map((d) => Math.max(d.incoming || 0, d.outgoing || 0, d.documents || 0)));
     const wrap = U.el('div', { class: 'chart chart-bar' });
-    data.forEach((d) => {
+    data.forEach((d, i) => {
       const col = U.el('div', { class: 'chart-col' });
       const bars = U.el('div', { class: 'chart-bars' });
       const vals = [['documents', 'var(--green)'], ['incoming', 'var(--blue)'], ['outgoing', 'var(--purple)']];
+      const targets = [];
       vals.forEach(([k, color]) => {
         const v = d[k] || 0;
         const h = (v / max) * 100;
-        const bar = U.el('div', { class: 'chart-bar-item', style: `height:${h}%;background:${color}`, title: `${k}: ${v}` });
+        const bar = U.el('div', { class: 'chart-bar-item', style: `height:0%;background:${color}`, 'data-h': String(h), title: `${k}: ${v}` });
         bars.appendChild(bar);
+        targets.push({ el: bar, h });
       });
       col.appendChild(bars);
       col.appendChild(U.el('span', { class: 'chart-label', text: d.date }));
       wrap.appendChild(col);
+    });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        Array.from(wrap.querySelectorAll('.chart-bar-item')).forEach((el, idx) => {
+          el.style.height = el.getAttribute('data-h') + '%';
+          el.style.transitionDelay = (idx * 0.04) + 's';
+        });
+      });
     });
     return wrap;
   }
@@ -203,7 +213,8 @@ EG.components = (function () {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
     svg.setAttribute('class', 'donut');
-    segments.forEach((s) => {
+    const circles = [];
+    segments.forEach((s, i) => {
       const len = (s.value / total) * c;
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', size / 2); circle.setAttribute('cy', size / 2); circle.setAttribute('r', r);
@@ -211,13 +222,61 @@ EG.components = (function () {
       circle.setAttribute('stroke', s.color);
       circle.setAttribute('stroke-width', '18');
       circle.setAttribute('stroke-dasharray', `${len} ${c - len}`);
-      circle.setAttribute('stroke-dashoffset', -offset);
+      circle.setAttribute('stroke-dashoffset', String(c));
       circle.setAttribute('transform', `rotate(-90 ${size / 2} ${size / 2})`);
+      circle.style.animationDelay = (i * 0.12) + 's';
       svg.appendChild(circle);
+      circles.push({ el: circle, target: -offset, len });
       offset += len;
     });
     const label = U.el('div', { class: 'donut-center' }, [U.el('strong', { text: String(total) }), U.el('span', { text: opts.centerLabel || '' })]);
-    return U.el('div', { class: 'donut-wrap' }, [svg, label]);
+    const wrap = U.el('div', { class: 'donut-wrap' }, [svg, label]);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        circles.forEach((item) => {
+          item.el.setAttribute('stroke-dashoffset', String(item.target));
+        });
+      });
+    });
+    return wrap;
+  }
+
+  function pieChart(segments, opts = {}) {
+    const total = segments.reduce((a, s) => a + s.value, 0) || 1;
+    const size = 320, r = 140, cx = size / 2, cy = size / 2;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+    svg.setAttribute('class', 'pie');
+    const paths = [];
+    let angle = -Math.PI / 2;
+    segments.forEach((s, i) => {
+      const slice = (s.value / total) * 2 * Math.PI;
+      const x1 = cx + r * Math.cos(angle);
+      const y1 = cy + r * Math.sin(angle);
+      const x2 = cx + r * Math.cos(angle + slice);
+      const y2 = cy + r * Math.sin(angle + slice);
+      const large = slice > Math.PI ? 1 : 0;
+      const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', s.color);
+      path.setAttribute('stroke', '#fff');
+      path.setAttribute('stroke-width', '2');
+      path.style.transformOrigin = `${cx}px ${cy}px`;
+      path.style.transform = 'scale(0)';
+      path.style.transition = 'transform 0.6s ease';
+      path.style.transitionDelay = (i * 0.1) + 's';
+      svg.appendChild(path);
+      paths.push(path);
+      angle += slice;
+    });
+    const wrap = U.el('div', { class: 'pie-wrap' }, [svg]);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        paths.forEach((p) => { p.style.transform = 'scale(1)'; });
+      });
+    });
+    return wrap;
   }
 
   function statCard(iconName, value, label, variant = 'green') {
@@ -237,6 +296,6 @@ EG.components = (function () {
   return {
     card, pageHeader, button, iconButton, badge, statusBadge, priorityBadge, emptyState,
     spinner, loadingBlock, fieldWrap, input, textarea, select, table, toast, modal, confirm,
-    prompt, barChart, donutChart, statCard, grid,
+    prompt, barChart, donutChart, pieChart, statCard, grid,
   };
 })();

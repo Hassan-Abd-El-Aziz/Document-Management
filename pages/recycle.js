@@ -13,10 +13,10 @@ EG.pages.recycle = {
     try {
       const items = await EG.api.recycle.list();
       view.appendChild(C.pageHeader(t('recycle'), [
-        C.button(t('emptyRecycle'), { icon: 'trash', variant: 'danger', onClick: () => C.confirm(t('confirmEmpty'), async () => {
+        EG.helpers.canDelete() ? C.button(t('emptyRecycle'), { icon: 'trash', variant: 'danger', onClick: () => C.confirm(t('confirmEmpty'), async () => {
           try { await EG.api.recycle.empty(); C.toast(t('deleted')); EG.router.navigate('recycle'); }
           catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
-        }) }),
+        }) }) : null,
       ]));
       const table = C.table(
         [t('type'), t('number'), t('title'), t('deletedAt'), t('actions')],
@@ -30,14 +30,14 @@ EG.pages.recycle = {
                 else await EG.api.outgoing.restore(d._id);
                 C.toast(t('restored')); EG.router.navigate('recycle');
               } }),
-              C.iconButton('trash', { title: t('permanentDelete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
+              EG.helpers.canDelete() ? C.iconButton('trash', { title: t('permanentDelete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
                 try {
                   if (d.kind === 'document') await EG.api.document.hardDelete(d._id);
                   else if (d.kind === 'incoming') await EG.api.incoming.hardDelete(d._id);
                   else await EG.api.outgoing.hardDelete(d._id);
                   C.toast(t('deleted')); EG.router.navigate('recycle');
                 } catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
-              }) }),
+              }) }) : null,
             ]);
             const title = d.kind === 'document' ? EG.utils.localize(d.title, EG.state.lang) : EG.utils.localize(d.subject, EG.state.lang);
             const num = d.fileNumber || d.letterNumber;

@@ -1,8 +1,10 @@
 :root {
   --green: #16a34a;
+  --green2: #22c55e;
   --green-600: #15803d;
   --green-100: #dcfce7;
   --blue: #2563eb;
+  --blue2: #0891b2;
   --blue-100: #dbeafe;
   --purple: #7c3aed;
   --red: #dc2626;
@@ -245,3 +247,9 @@ button { font-family: inherit; cursor: pointer; }
 .menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 40; display: none; }
 
 .hidden { display: none !important; }
+
+@media print {
+  body > *:not(.chart-card) { display: none !important; }
+  .chart-card { position: static; padding: 0; box-shadow: none; border: none; }
+  .chart-card .card-title { display: none; }
+}

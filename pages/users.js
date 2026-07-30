@@ -20,10 +20,10 @@ EG.pages.users = {
           renderRow: (u) => {
             const actions = U.el('div', { class: 'row-actions' }, [
               C.iconButton('edit', { title: t('edit'), onClick: () => openForm(u) }),
-              C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
+              EG.helpers.canDelete() ? C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
                 try { await EG.api.auth.deleteUser(u._id); C.toast(t('deleted')); EG.router.navigate('users'); }
                 catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
-              }) }),
+              }) }) : null,
             ]);
             return U.el('tr', {}, [
               td(u.username, 'cell-title'), td(EG.utils.localize(u.fullName, EG.state.lang)), td(t(u.role)),

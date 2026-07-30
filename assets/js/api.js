@@ -101,12 +101,6 @@ EG.api = (function () {
       suggestNextLetterNumber: (deptCode) => invoke('outgoing.suggestNextLetterNumber', { departmentCode: deptCode }),
     },
     recycle: { list: () => invoke('recycle.list'), empty: () => invoke('recycle.empty') },
-    notifications: {
-      list: (u) => invoke('notifications.list', { unreadOnly: u }),
-      unread: () => invoke('notifications.unread'),
-      read: (id) => invoke('notifications.read', { id }),
-      readAll: () => invoke('notifications.readAll'),
-    },
     backup: {
       create: (type, note) => invoke('backup.create', { type, note }),
       list: () => invoke('backup.list'),
@@ -149,15 +143,6 @@ EG.api = (function () {
       open: (p) => invoke('file.open', { path: p }),
       openFolder: (p) => invoke('file.openFolder', { path: p }),
       saveDialog: (n) => invoke('file.saveDialog', { defaultName: n }),
-    },
-    emailLog: {
-      list: (q) => invoke('emailLog.list', { query: q }),
-      get: (id) => invoke('emailLog.get', { id }),
-      create: (d) => invoke('emailLog.create', d),
-      update: (id, d) => invoke('emailLog.update', { id, data: d }),
-      remove: (id) => invoke('emailLog.remove', { id }),
-      restore: (id) => invoke('emailLog.restore', { id }),
-      stats: () => invoke('emailLog.stats'),
     },
   }, { get(target, prop) { return target[prop]; } });
 })();

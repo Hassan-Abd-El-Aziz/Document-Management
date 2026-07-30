@@ -25,13 +25,13 @@ EG.pages.documents = {
               C.iconButton('eye', { title: t('preview'), onClick: () => showPreview(d) }),
               C.iconButton('edit', { title: t('edit'), variant: 'action', onClick: () => openForm(d) }),
               d.filePath ? C.iconButton('file', { title: t('openFile'), onClick: () => EG.api.file.open(d.filePath).catch((e) => C.toast(EG.api.errMessage(e), 'error')) }) : null,
-              C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
+              EG.helpers.canDelete() ? C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
                 try {
                   await EG.api.document.remove(d._id);
                   C.toast(t('deleted'));
                   EG.router.navigate('documents');
                 } catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
-              }) }),
+              }) }) : null,
             ]);
             return U.el('tr', {}, [
               td(d.fileNumber, 'cell-title'),
@@ -84,7 +84,7 @@ EG.pages.documents = {
             } }),
           ]),
           U.el('div', { style: 'margin-top:8px' }, [
-            U.el('small', { class: 'cell-soft', text: 'This will assign sequential file numbers to all documents that don\'t have a file number yet.' }),
+            U.el('small', { class: 'cell-soft', text: t('bulkAssignDesc') }),
           ]),
         ]);
         view.appendChild(bulkCard);
@@ -217,7 +217,7 @@ EG.pages.documents = {
               m.close();
             });
             row.appendChild(U.el('span', { text: name }));
-            const delBtn = C.iconButton('trash', { title: t('delete'), variant: 'danger', size: 16, onClick: async (e) => {
+            const delBtn = EG.helpers.canDelete() ? C.iconButton('trash', { title: t('delete'), variant: 'danger', size: 16, onClick: async (e) => {
               e.stopPropagation();
               if (!confirm('Delete "' + name + '"?')) return;
               try {
@@ -231,7 +231,7 @@ EG.pages.documents = {
                 renderList();
                 C.toast(t('deleted'));
               } catch (err) { C.toast(EG.api.errMessage(err), 'error'); }
-            } });
+            } }) : null;
             row.appendChild(delBtn);
             listContainer.appendChild(row);
           });

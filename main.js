@@ -41,9 +41,9 @@ function getAppTitle() {
   try {
     const s = settings.getSettings();
     const name = s.companyName && (s.companyName.ar || s.companyName.en) ? (s.companyName.ar || s.companyName.en) : 'Egypt Gulf';
-    return name + ' - Document Management';
+    return name + ' - إدارة الوثائق';
   } catch (_) {
-    return 'Egypt Gulf - Document Management';
+    return 'Egypt Gulf - إدارة الوثائق';
   }
 }
 

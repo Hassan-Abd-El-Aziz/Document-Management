@@ -30,6 +30,62 @@ function loc(v) { return v && (v.ar || v.en) || ''; }
 function ok(data) { return { ok: true, data }; }
 function fail(error) { return { ok: false, error: error && error.message ? error.message : String(error) }; }
 
+function getLang() {
+  try {
+    const s = settings.getSettings();
+    return s && s.language ? s.language : 'ar';
+  } catch (_) { return 'ar'; }
+}
+
+function auditMsg(action, entity, detail) {
+  const lang = getLang();
+  const create = detail ? (lang === 'ar' ? 'تم إنشاء' : 'Created') : '';
+  const update = lang === 'ar' ? 'تم تحديث' : 'Updated';
+  const delete_ = lang === 'ar' ? 'تم حذف' : 'Deleted';
+  const requested = lang === 'ar' ? 'طلب' : 'Requested';
+  const statusMap = {
+    pending: lang === 'ar' ? 'قيد الانتظار' : 'Pending',
+    received: lang === 'ar' ? 'مستلم' : 'Received',
+    delivered: lang === 'ar' ? 'تم التسليم' : 'Delivered',
+    rejected: lang === 'ar' ? 'مرفوض' : 'Rejected',
+    cancelled: lang === 'ar' ? 'ملغى' : 'Cancelled',
+    in_archive: lang === 'ar' ? 'داخل الأرشيف' : 'In Archive',
+    reserved: lang === 'ar' ? 'محجوز' : 'Reserved',
+    borrowed: lang === 'ar' ? 'معار' : 'Borrowed',
+    returned: lang === 'ar' ? 'مرجع' : 'Returned',
+    overdue: lang === 'ar' ? 'متأخر' : 'Overdue',
+    under_review: lang === 'ar' ? 'تحت المراجعة' : 'Under Review',
+    missing: lang === 'ar' ? 'فقود' : 'Missing',
+    pending_disposal: lang === 'ar' ? 'قيد الإعدام' : 'Pending Disposal',
+    archived: lang === 'ar' ? 'مؤرشف' : 'Archived',
+    approved: lang === 'ar' ? 'معتمد' : 'Approved',
+  };
+  const map = {
+    user: lang === 'ar' ? 'المستخدم' : 'User',
+    department: lang === 'ar' ? 'القسم' : 'Department',
+    project: lang === 'ar' ? 'المشروع' : 'Project',
+    document: lang === 'ar' ? 'الوثيقة' : 'Document',
+    incoming: lang === 'ar' ? 'الوارد' : 'Incoming',
+    outgoing: lang === 'ar' ? 'الصادر' : 'Outgoing',
+    lending: lang === 'ar' ? 'الاستعارة' : 'Lending',
+    recycle: lang === 'ar' ? 'السلة' : 'Recycle Bin',
+  };
+  const entityLabel = map[entity] || entity;
+  const detailLabel = typeof detail === 'string' ? (statusMap[detail] || detail) : detail;
+  if (action === 'create') return `${create} ${entityLabel} ${detailLabel || ''}`.trim();
+  if (action === 'update') return `${update} ${entityLabel}`;
+  if (action === 'delete') return `${delete_} ${entityLabel}`;
+  if (action === 'status') return `${update} حالة ${entityLabel}: ${detailLabel || ''}`.trim();
+  if (action === 'approve' || action === 'reject') return `${action === 'approve' ? (lang === 'ar' ? 'اعتماد' : 'Approve') : (lang === 'ar' ? 'رفض' : 'Reject')} ${entityLabel}`;
+  if (action === 'lendingLoanRequested') return `${lang === 'ar' ? 'طلب' : 'Requested'} ${entityLabel}: ${detail || ''}`.trim();
+  if (action === 'lendingRecordDeleted') return `${delete_} ${entityLabel}`;
+  if (action === 'lendingUpdated') return `${update} ${entityLabel}`;
+  if (action === 'restore') return `${lang === 'ar' ? 'تمت استعادة' : 'Restored'} ${entityLabel}`;
+  if (action === 'receipt') return detail || `${action} ${entityLabel}`;
+  if (action === 'version') return detail || `${action} ${entityLabel}`;
+  return detail || `${action} ${entityLabel}`;
+}
+
 async function handle({ action, payload = {} }) {
   try {
     switch (action) {
@@ -63,7 +119,7 @@ async function handle({ action, payload = {} }) {
           createdAt: new Date(),
           lastLogin: null,
         });
-        audit.audit('create', 'user', user._id, `Created user ${payload.username}`);
+        audit.audit('create', 'user', user._id, auditMsg('create', 'user', payload.username));
         return ok(user);
       }
       case 'auth.updateUser': {
@@ -71,13 +127,13 @@ async function handle({ action, payload = {} }) {
         const data = { ...payload.data };
         if (data.password) data.password = require('../database/realm').hashPassword(data.password);
         const user = repo.update(COLLECTIONS.USERS, payload.id, data);
-        audit.audit('update', 'user', payload.id, `Updated user`);
+        audit.audit('update', 'user', payload.id, auditMsg('update', 'user'));
         return ok(user);
       }
       case 'auth.deleteUser': {
         auth.requirePermission('users:write');
         repo.remove(COLLECTIONS.USERS, payload.id);
-        audit.audit('delete', 'user', payload.id, 'Deleted user');
+        audit.audit('delete', 'user', payload.id, auditMsg('delete', 'user'));
         return ok(true);
       }
 
@@ -149,19 +205,19 @@ async function handle({ action, payload = {} }) {
           updatedAt: new Date(),
           createdBy: auth.getSession() ? auth.getSession().userId : null,
         });
-        audit.audit('create', 'department', dept._id, `Created department ${code}`);
+        audit.audit('create', 'department', dept._id, auditMsg('create', 'department', code));
         return ok(dept);
       }
       case 'department.update': {
         auth.requirePermission('departments:write');
         const dept = repo.update(COLLECTIONS.DEPARTMENTS, payload.id, { ...payload.data, updatedAt: new Date() });
-        audit.audit('update', 'department', payload.id, 'Updated department');
+        audit.audit('update', 'department', payload.id, auditMsg('update', 'department'));
         return ok(dept);
       }
       case 'department.delete': {
         auth.requirePermission('departments:write');
         repo.remove(COLLECTIONS.DEPARTMENTS, payload.id);
-        audit.audit('delete', 'department', payload.id, 'Deleted department');
+        audit.audit('delete', 'department', payload.id, auditMsg('delete', 'department'));
         return ok(true);
       }
       case 'department.toggle': {
@@ -191,19 +247,19 @@ async function handle({ action, payload = {} }) {
           updatedAt: new Date(),
           createdBy: auth.getSession() ? auth.getSession().userId : null,
         });
-        audit.audit('create', 'project', proj._id, `Created project ${proj.name}`);
+        audit.audit('create', 'project', proj._id, auditMsg('create', 'project', proj.name));
         return ok(proj);
       }
       case 'project.update': {
         auth.requirePermission('documents:write');
         const proj = repo.update(COLLECTIONS.PROJECTS, payload.id, { ...payload.data, updatedAt: new Date() });
-        audit.audit('update', 'project', payload.id, 'Updated project');
+        audit.audit('update', 'project', payload.id, auditMsg('update', 'project'));
         return ok(proj);
       }
       case 'project.delete': {
         auth.requirePermission('documents:write');
         repo.update(COLLECTIONS.PROJECTS, payload.id, { deleted: true, updatedAt: new Date() });
-        audit.audit('delete', 'project', payload.id, 'Deleted project');
+        audit.audit('delete', 'project', payload.id, auditMsg('delete', 'project'));
         return ok(true);
       }
 
@@ -243,7 +299,7 @@ async function handle({ action, payload = {} }) {
             updatedAt: new Date(),
           });
           results.push(updated);
-          audit.audit('update', 'document', doc._id, `Bulk file number update to ${fileNumber}`);
+          audit.audit('update', 'document', doc._id, auditMsg('update', 'document', fileNumber));
         }
         return ok(results);
       }
@@ -289,14 +345,14 @@ async function handle({ action, payload = {} }) {
           updatedAt: new Date(),
           createdBy: auth.getSession() ? auth.getSession().userId : null,
         });
-        audit.audit('create', 'document', doc._id, `Document ${doc.fileNumber}`, loc(doc.title));
+        audit.audit('create', 'document', doc._id, auditMsg('create', 'document', doc.fileNumber), loc(doc.title));
         notify.createNotification({ type: 'document', title: { ar: 'وثيقة جديدة', en: 'New Document' }, body: { ar: doc.fileNumber, en: doc.fileNumber } });
         return ok(doc);
       }
       case 'document.update': {
         auth.requirePermission('documents:write');
         const doc = repo.update(COLLECTIONS.DOCUMENTS, payload.id, { ...payload.data, updatedAt: new Date() });
-        audit.audit('update', 'document', payload.id, 'Updated document');
+        audit.audit('update', 'document', payload.id, auditMsg('update', 'document'));
         return ok(doc);
       }
       case 'document.favorite': {
@@ -315,7 +371,7 @@ async function handle({ action, payload = {} }) {
           objs[0].currentVersion = doc.currentVersion + 1;
           objs[0].updatedAt = new Date();
         });
-        audit.audit('version', 'document', payload.id, `New version ${doc.currentVersion + 1}`, loc(doc.title));
+        audit.audit('version', 'document', payload.id, auditMsg('create', 'document', `v${doc.currentVersion + 1}`), loc(doc.title));
         return ok(serialize(objs[0]));
       }
       case 'document.delete': {
@@ -324,13 +380,13 @@ async function handle({ action, payload = {} }) {
         const objs = realm.objects(COLLECTIONS.DOCUMENTS).filtered('_id == $0', new (require('realm').BSON.UUID)(payload.id));
         const doc = objs.length ? serialize(objs[0]) : null;
         repo.update(COLLECTIONS.DOCUMENTS, payload.id, { deleted: true, deletedAt: new Date() });
-        audit.audit('delete', 'document', payload.id, 'Moved to recycle bin', doc ? `${doc.fileNumber} - ${loc(doc.title)}` : null);
+        audit.audit('delete', 'document', payload.id, auditMsg('delete', 'document'), doc ? `${doc.fileNumber} - ${loc(doc.title)}` : null);
         return ok(true);
       }
       case 'document.restore': {
         auth.requirePermission('documents:write');
         repo.update(COLLECTIONS.DOCUMENTS, payload.id, { deleted: false, deletedAt: null });
-        audit.audit('restore', 'document', payload.id, 'Restored from recycle bin');
+        audit.audit('restore', 'document', payload.id, auditMsg('restore', 'document'));
         return ok(true);
       }
       case 'document.hardDelete': {
@@ -345,7 +401,7 @@ async function handle({ action, payload = {} }) {
           (d.versions || []).forEach((v) => fileSvc.deleteFile(v.filePath));
         }
         repo.remove(COLLECTIONS.DOCUMENTS, payload.id);
-        audit.audit('delete', 'document', payload.id, 'Permanently deleted', docName);
+        audit.audit('delete', 'document', payload.id, auditMsg('delete', 'document'), docName);
         return ok(true);
       }
 
@@ -396,7 +452,7 @@ async function handle({ action, payload = {} }) {
           updatedAt: new Date(),
           createdBy: auth.getSession() ? auth.getSession().userId : null,
         });
-        audit.audit('create', 'incoming', rec._id, `Incoming ${rec.letterNumber}`, loc(rec.subject));
+        audit.audit('create', 'incoming', rec._id, auditMsg('create', 'incoming', rec.letterNumber), loc(rec.subject));
         if (rec.priority === 'urgent') {
           notify.createNotification({ type: 'urgent', title: { ar: 'خطاب وارد عاجل', en: 'Urgent Incoming Letter' }, body: { ar: `وارد عاجل برقم ${rec.letterNumber}`, en: `Urgent incoming #${rec.letterNumber}` }, priority: 'high' });
         } else {
@@ -415,7 +471,7 @@ async function handle({ action, payload = {} }) {
           objs[0].updatedAt = new Date();
           objs[0].history.push({ action: 'status', status: payload.status, by: auth.getSession() ? auth.getSession().username : null, at: new Date(), note: payload.note || '' });
         });
-        audit.audit('status', 'incoming', payload.id, payload.status);
+        audit.audit('status', 'incoming', payload.id, auditMsg('status', 'incoming', payload.status));
         if (['delivered', 'rejected', 'cancelled'].includes(payload.status)) notify.markUrgentResolved(payload.id);
         try { notify.generateSystemReminders(); } catch (_) {}
         return ok(serialize(objs[0]));
@@ -423,7 +479,7 @@ async function handle({ action, payload = {} }) {
       case 'incoming.update': {
         auth.requirePermission('incoming:write');
         const rec = repo.update(COLLECTIONS.INCOMING, payload.id, { ...payload.data, updatedAt: new Date() });
-        audit.audit('update', 'incoming', payload.id, 'Updated incoming letter');
+        audit.audit('update', 'incoming', payload.id, auditMsg('update', 'incoming'));
         try { notify.generateSystemReminders(); } catch (_) {}
         return ok(rec);
       }
@@ -433,14 +489,14 @@ async function handle({ action, payload = {} }) {
         const objs = realm.objects(COLLECTIONS.INCOMING).filtered('_id == $0', new (require('realm').BSON.UUID)(payload.id));
         const rec = objs.length ? serialize(objs[0]) : null;
         repo.update(COLLECTIONS.INCOMING, payload.id, { deleted: true, deletedAt: new Date() });
-        audit.audit('delete', 'incoming', payload.id, 'Moved to recycle bin', rec ? `${rec.letterNumber} - ${loc(rec.subject)}` : null);
+        audit.audit('delete', 'incoming', payload.id, auditMsg('delete', 'incoming'), rec ? `${rec.letterNumber} - ${loc(rec.subject)}` : null);
         try { notify.generateSystemReminders(); } catch (_) {}
         return ok(true);
       }
       case 'incoming.restore': {
         auth.requirePermission('incoming:write');
         const rec = repo.update(COLLECTIONS.INCOMING, payload.id, { deleted: false, deletedAt: null });
-        audit.audit('restore', 'incoming', payload.id, 'Restored from recycle bin');
+        audit.audit('restore', 'incoming', payload.id, auditMsg('restore', 'incoming'));
         try { notify.generateSystemReminders(); } catch (_) {}
         return ok(rec);
       }
@@ -450,7 +506,7 @@ async function handle({ action, payload = {} }) {
         let recName = null;
         if (objs.length) { const d = serialize(objs[0]); recName = `${d.letterNumber} - ${loc(d.subject)}`; if (d.filePath) await fileSvc.deleteFile(d.filePath); }
         repo.remove(COLLECTIONS.INCOMING, payload.id);
-        audit.audit('delete', 'incoming', payload.id, 'Permanently deleted', recName);
+        audit.audit('delete', 'incoming', payload.id, auditMsg('delete', 'incoming'), recName);
         return ok(true);
       }
 
@@ -507,7 +563,7 @@ async function handle({ action, payload = {} }) {
           updatedAt: new Date(),
           createdBy: auth.getSession() ? auth.getSession().userId : null,
         });
-        audit.audit('create', 'outgoing', rec._id, `Outgoing ${rec.letterNumber}`, loc(rec.subject));
+        audit.audit('create', 'outgoing', rec._id, auditMsg('create', 'outgoing', rec.letterNumber), loc(rec.subject));
         if (rec.priority === 'urgent') {
           notify.createNotification({ type: 'urgent', title: { ar: 'خطاب صادر عاجل', en: 'Urgent Outgoing Letter' }, body: { ar: `صادر عاجل برقم ${rec.letterNumber}`, en: `Urgent outgoing #${rec.letterNumber}` }, priority: 'high' });
         } else {
@@ -534,14 +590,14 @@ async function handle({ action, payload = {} }) {
           objs[0].updatedAt = new Date();
           objs[0].history.push({ action: 'delivered', status: 'delivered', by: auth.getSession() ? auth.getSession().username : null, at: new Date(), note: 'Signed receipt' });
         });
-        audit.audit('receipt', 'outgoing', payload.id, `Signed by ${payload.receiverName}`);
+        audit.audit('receipt', 'outgoing', payload.id, `${getLang() === 'ar' ? 'تم الاستلام بواسطة' : 'Signed by'} ${payload.receiverName}`);
         notify.markUrgentResolved(payload.id);
         return ok(serialize(objs[0]));
       }
       case 'outgoing.update': {
         auth.requirePermission('outgoing:write');
         const rec = repo.update(COLLECTIONS.OUTGOING, payload.id, { ...payload.data, updatedAt: new Date() });
-        audit.audit('update', 'outgoing', payload.id, 'Updated outgoing letter');
+        audit.audit('update', 'outgoing', payload.id, auditMsg('update', 'outgoing'));
         try { notify.generateSystemReminders(); } catch (_) {}
         return ok(rec);
       }
@@ -551,14 +607,14 @@ async function handle({ action, payload = {} }) {
         const objs = realm.objects(COLLECTIONS.OUTGOING).filtered('_id == $0', new (require('realm').BSON.UUID)(payload.id));
         const rec = objs.length ? serialize(objs[0]) : null;
         repo.update(COLLECTIONS.OUTGOING, payload.id, { deleted: true, deletedAt: new Date() });
-        audit.audit('delete', 'outgoing', payload.id, 'Moved to recycle bin', rec ? `${rec.letterNumber} - ${loc(rec.subject)}` : null);
+        audit.audit('delete', 'outgoing', payload.id, auditMsg('delete', 'outgoing'), rec ? `${rec.letterNumber} - ${loc(rec.subject)}` : null);
         try { notify.generateSystemReminders(); } catch (_) {}
         return ok(true);
       }
       case 'outgoing.restore': {
         auth.requirePermission('outgoing:write');
         const rec = repo.update(COLLECTIONS.OUTGOING, payload.id, { deleted: false, deletedAt: null });
-        audit.audit('restore', 'outgoing', payload.id, 'Restored from recycle bin');
+        audit.audit('restore', 'outgoing', payload.id, auditMsg('restore', 'outgoing'));
         try { notify.generateSystemReminders(); } catch (_) {}
         return ok(rec);
       }
@@ -568,7 +624,7 @@ async function handle({ action, payload = {} }) {
         let recName = null;
         if (objs.length) { const d = serialize(objs[0]); recName = `${d.letterNumber} - ${loc(d.subject)}`; if (d.filePath) await fileSvc.deleteFile(d.filePath); if (d.receipt && d.receipt.signatureImagePath) await fileSvc.deleteFile(d.receipt.signatureImagePath); }
         repo.remove(COLLECTIONS.OUTGOING, payload.id);
-        audit.audit('delete', 'outgoing', payload.id, 'Permanently deleted', recName);
+        audit.audit('delete', 'outgoing', payload.id, auditMsg('delete', 'outgoing'), recName);
         return ok(true);
       }
 
@@ -662,7 +718,7 @@ async function handle({ action, payload = {} }) {
           updatedAt: now,
           deleted: false,
         });
-        audit.audit('create', 'lending', rec._id, `Loan requested: ${rec.itemName} by ${rec.borrowerName}`);
+        audit.audit('create', 'lending', rec._id, auditMsg('lendingLoanRequested', 'lending', `${rec.itemName} - ${rec.borrowerName}`));
         notify.createNotification({ type: 'lending_request', title: { ar: 'طلب استعارة جديد', en: 'New Lending Request' }, body: { ar: `طلب استعارة ${rec.itemName} من ${rec.borrowerName}`, en: `${rec.borrowerName} requested ${rec.itemName}` }, relatedId: String(rec._id), priority: 'medium' });
         return ok(rec);
       }
@@ -690,7 +746,7 @@ async function handle({ action, payload = {} }) {
         else hist.push(entry);
         const data = { ...changes, history: hist, updatedAt: new Date() };
         const rec = repo.update(collection, id, data);
-        audit.audit('status', 'lending', id, `${change?.action || 'updated'} ${rec.itemName}`);
+        audit.audit('status', 'lending', id, auditMsg('status', 'lending', `${change?.action || 'updated'} ${rec.itemName}`));
         return serialize(rec);
       }
 
@@ -779,13 +835,13 @@ async function handle({ action, payload = {} }) {
       case 'lending.update': {
         auth.requirePermission('lending:write');
         const rec = repo.update(COLLECTIONS.LENDING, payload.id, { ...payload.data, updatedAt: new Date() });
-        audit.audit('update', 'lending', payload.id, 'Updated lending');
+        audit.audit('update', 'lending', payload.id, auditMsg('update', 'lending'));
         return ok(rec);
       }
       case 'lending.delete': {
         auth.requirePermission('lending:write');
         repo.remove(COLLECTIONS.LENDING, payload.id);
-        audit.audit('delete', 'lending', payload.id, 'Deleted lending record');
+        audit.audit('delete', 'lending', payload.id, auditMsg('lendingRecordDeleted', 'lending'));
         return ok(true);
       }
 
@@ -885,7 +941,7 @@ async function updateOutgoingStatus(payload) {
     objs[0].updatedAt = new Date();
     objs[0].history.push({ action: 'status', status: payload.status, by: auth.getSession() ? auth.getSession().username : null, at: new Date(), note: payload.note || '' });
   });
-  audit.audit('status', 'outgoing', payload.id, payload.status);
+  audit.audit('status', 'outgoing', payload.id, auditMsg('status', 'outgoing', payload.status));
   if (['delivered', 'rejected', 'cancelled'].includes(payload.status)) notify.markUrgentResolved(payload.id);
   try { notify.generateSystemReminders(); } catch (_) {}
   return serialize(objs[0]);
@@ -904,7 +960,7 @@ async function emptyRecycle() {
       realm.delete(del);
     }
   });
-  audit.audit('delete', 'recycle', null, 'Emptied recycle bin');
+      audit.audit('delete', 'recycle', null, auditMsg('delete', 'recycle'));
 }
 
 function buildDashboard() {
@@ -979,7 +1035,15 @@ function buildReport(payload) {
   let results = realm.objects(col);
   if (!isDepartment) results = results.filtered('deleted == false');
   if (payload.fromDate && payload.toDate) {
-    results = results.filtered('createdAt >= $0 AND createdAt <= $1', new Date(payload.fromDate), new Date(payload.toDate));
+    const from = new Date(payload.fromDate);
+    const to = new Date(payload.toDate);
+    if (col === COLLECTIONS.INCOMING) {
+      results = results.filtered('receivedDate >= $0 AND receivedDate <= $1', from, to);
+    } else if (col === COLLECTIONS.OUTGOING) {
+      results = results.filtered('sentDate >= $0 AND sentDate <= $1', from, to);
+    } else {
+      results = results.filtered('createdAt >= $0 AND createdAt <= $1', from, to);
+    }
   }
   if (payload.departmentCode && !isDepartment) results = results.filtered('departmentCode == $0', payload.departmentCode);
   return serializeList(results.sorted('createdAt', true));

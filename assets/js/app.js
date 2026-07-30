@@ -74,12 +74,6 @@ EG.app = (function () {
       overlay.classList.toggle('show', shell.classList.contains('menu-open'));
     };
 
-    const notifBtn = document.getElementById('notifBtn');
-    const bellWrap = document.createElement('span');
-    bellWrap.innerHTML = EG.icon('bell', 20);
-    notifBtn.insertBefore(bellWrap.firstElementChild, document.getElementById('notifBadge'));
-    notifBtn.onclick = toggleNotifPanel;
-
     const userChip = document.getElementById('userChip');
     userChip.onclick = showUserMenu;
     renderUserChip();
@@ -150,53 +144,7 @@ EG.app = (function () {
     userIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') passIn.focus(); });
   }
 
-  function toggleNotifPanel() {
-    const existing = document.querySelector('.notif-panel');
-    if (existing) { existing.remove(); return; }
-    const panel = U.el('div', { class: 'notif-panel' });
-    const header = U.el('div', { style: 'display:flex;justify-content:space-between;align-items:center;padding:8px 10px' }, [
-      U.el('strong', { text: t('notifications') }),
-      U.el('div', { style: 'display:flex;gap:8px;align-items:center' }, [
-        C.button(t('markAllRead'), { variant: 'ghost', size: 'sm', onClick: async () => { await EG.api.notifications.readAll().catch(() => {}); toggleNotifPanel(); toggleNotifPanel(); } }),
-        C.button(t('viewAll'), { variant: 'ghost', size: 'sm', onClick: () => { panel.remove(); EG.router.navigate('notifications'); } }),
-      ]),
-    ]);
-    panel.appendChild(header);
-    EG.api.notifications.list(true).then((items) => {
-      if (!items.length) { panel.appendChild(U.el('div', { class: 'cell-soft', style: 'padding:14px', text: t('none') })); }
-      items.forEach((n) => {
-        const urgent = n.priority === 'urgent' || n.type === 'urgent' || n.type === 'urgent_pending';
-        const item = U.el('div', { class: 'notif-item unread' + (urgent ? ' urgent' : '') }, [
-          U.el('span', { class: 'notif-dot' + (urgent ? ' dot-urgent' : '') }),
-          U.el('div', {}, [
-            U.el('div', { class: 'notif-title', text: EG.utils.localize(n.title, EG.state.lang) }),
-            U.el('div', { class: 'notif-body', text: EG.utils.localize(n.body, EG.state.lang) }),
-            U.el('div', { class: 'notif-time', text: EG.utils.relTime(n.createdAt, EG.state.lang) }),
-          ]),
-        ]);
-        item.onclick = async () => { await EG.api.notifications.read(n._id).catch(() => {}); panel.remove(); refreshBadges(); };
-        panel.appendChild(item);
-      });
-    }).catch(() => {});
-    document.querySelector('.topbar-actions').appendChild(panel);
-  }
-
-  async function refreshBadges() {
-    try {
-      const count = await EG.api.notifications.unread();
-      const badge = document.getElementById('notifBadge');
-      if (count > 0) {
-        badge.textContent = count > 99 ? '99+' : count;
-        badge.classList.remove('hidden');
-      } else {
-        badge.classList.add('hidden');
-      }
-      const btn = document.getElementById('notifBtn');
-      if (btn) {
-        btn.classList.toggle('notif-active', count > 0);
-      }
-    } catch (_) {}
-  }
+  async function refreshBadges() {}
 
   async function updateStorageMeter() {
     try {
@@ -291,7 +239,7 @@ EG.app = (function () {
     try {
       const s = settings || EG.state.settings || {};
       const name = s.companyName && (s.companyName.ar || s.companyName.en) ? (EG.utils.localize(s.companyName, EG.state.lang) || s.companyName.en) : (t('appName') || 'Egypt Gulf');
-      const sub = t('appSub') || 'Document Management';
+      const sub = t('appSub') || 'إدارة الوثائق';
       const brandName = document.getElementById('brandName');
       const brandSub = document.getElementById('brandSub');
       if (brandName) brandName.textContent = name;

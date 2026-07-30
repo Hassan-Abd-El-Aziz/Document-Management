@@ -34,10 +34,10 @@ EG.pages.backup = {
               C.iconButton('restore', { title: t('restoreBackup'), variant: 'action', onClick: () => C.confirm(t('confirmRestore'), async () => {
                 try { await EG.api.backup.restore(b._id); C.toast(t('willRestart')); } catch (e2) { C.toast(EG.api.errMessage(e2), 'error'); }
               }) }),
-              C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
+              EG.helpers.canDelete() ? C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
                 try { await EG.api.backup.del(b._id); C.toast(t('deleted')); EG.router.navigate('backup'); }
                 catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
-              }) }),
+              }) }) : null,
             ]);
             return U.el('tr', {}, [
               td(t(b.type), 'cell-title'), td(b.fileName || '-'), td(EG.utils.bytes(b.size)),

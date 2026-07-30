@@ -25,13 +25,13 @@ EG.pages.outgoing = {
               d.filePath ? C.iconButton('file', { title: t('openFile'), onClick: stop(() => EG.api.file.open(d.filePath).catch(() => C.toast(t('fileNotFound'), 'error'))) }) : null,
               d.deliveryStatus !== 'delivered' ? C.iconButton('sig', { title: t('signNow'), variant: 'action', onClick: stop(() => openSign(d)) }) : C.iconButton('check', { title: t('delivered'), variant: 'action' }),
               C.iconButton('history', { title: t('history'), onClick: stop(() => openStatus(d)) }),
-              C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: stop(() => C.confirm(t('confirmDelete'), async () => {
+              EG.helpers.canDelete() ? C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: stop(() => C.confirm(t('confirmDelete'), async () => {
                 try {
                   await EG.api.outgoing.remove(d._id);
                   C.toast(t('deleted'));
                   EG.router.navigate('outgoing');
                 } catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
-              })) }),
+              })) }) : null,
             ]);
             return U.el('tr', { style: 'cursor:pointer', onclick: () => openStatus(d) }, [
               td(d.letterNumber, 'cell-title'), td(EG.utils.localize(d.subject, EG.state.lang)), td(d.sentTo || '-'),
@@ -122,6 +122,7 @@ EG.pages.outgoing = {
         U.el('div', { style: 'display:flex;gap:10px;align-items:center;margin-bottom:14px' }, [C.button(t('upload'), { icon: 'upload', variant: 'ghost', onClick: async () => { filePath = await EG.helpers.filePick(); if (filePath) fileLabel.textContent = filePath.split(/[\\/]/).pop(); } }), fileLabel]),
         C.fieldWrap(t('letterNumber'), letterNumberInput),
         letterNumberRow,
+        C.fieldWrap(t('letterDate'), letterDate),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('subject') + ' (AR)', subAr), C.fieldWrap(t('subject') + ' (EN)', subEn)]),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('to'), sentTo), C.fieldWrap(t('from'), from)]),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('department'), deptSel), C.fieldWrap(t('receivedBy'), deliveredBy)]),
@@ -229,13 +230,14 @@ EG.pages.outgoing = {
 
       const letterNumberRow = U.el('div', { style: 'display:flex;gap:6px;align-items:center;margin-bottom:6px' }, [
         yearInput, dash1, deptInput, typeLabel, seqInput,
-        U.el('span', { class: 'cell-soft', style: 'font-size:11px', text: 'Edit letter number if needed' }),
+        U.el('span', { class: 'cell-soft', style: 'font-size:11px', text: t('editLetterNumber') }),
       ]);
 
       const body = U.el('div', {}, [
         U.el('div', { style: 'display:flex;gap:10px;align-items:center;margin-bottom:14px' }, [C.button(t('upload'), { icon: 'upload', variant: 'ghost', onClick: async () => { filePath = await EG.helpers.filePick(); if (filePath) fileLabel.textContent = filePath.split(/[\\/]/).pop(); } }), fileLabel]),
         C.fieldWrap(t('letterNumber'), letterNumberInput),
         letterNumberRow,
+        C.fieldWrap(t('letterDate'), letterDate),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('subject') + ' (AR)', subAr), C.fieldWrap(t('subject') + ' (EN)', subEn)]),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('to'), sentTo), C.fieldWrap(t('from'), from)]),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('department'), deptSel), C.fieldWrap(t('receivedBy'), deliveredBy)]),

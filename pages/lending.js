@@ -11,7 +11,7 @@ EG.pages.lending = {
     const U = EG.utils, C = EG.components, t = (k) => EG.i18n.t(k);
     U.clear(view);
     try {
-      const allItems = await EG.api.lending.list('deleted == false', {});
+      let allItems = await EG.api.lending.list('deleted == false', {});
       view.appendChild(C.pageHeader(t('lending'), [
         C.button(t('newLending'), { icon: 'plus', onClick: () => openForm() }),
         C.button(t('exportExcel'), { icon: 'download', variant: 'blue', onClick: () => exportAs('excel') }),
@@ -72,9 +72,9 @@ EG.pages.lending = {
               const actions = U.el('div', { class: 'row-actions' }, [
                 d.approvalAttachment ? C.iconButton('eye', { title: t('preview'), onClick: () => showApprovalAttachment(d) }) : null,
                 C.iconButton('edit', { title: t('edit'), variant: 'action', onClick: () => openForm(d) }),
-                C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
-                  try { await EG.api.lending.del(d._id); C.toast(t('deleted')); } catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
-                }) }),
+                EG.helpers.canDelete() ? C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
+                  try { await EG.api.lending.del(d._id); C.toast(t('deleted')); allItems = await EG.api.lending.list('deleted == false', {}); renderPage(); } catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
+                }) }) : null,
               ]);
               const approvalStatusLabel = d.approvalAttachment ? 'معتمد' : 'قيد الانتظار';
               return U.el('tr', {}, [
@@ -217,7 +217,7 @@ EG.pages.lending = {
       const ext = d.approvalAttachment.split('.').pop().toLowerCase();
       const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext);
       const body = U.el('div', {}, [
-        isImage ? U.el('img', { src: d.approvalAttachment, style: 'max-width:100%;max-height:60vh;border-radius:8px' }) : U.el('a', { href: d.approvalAttachment, target: '_blank', text: 'Open Attachment' }),
+        isImage ? U.el('img', { src: d.approvalAttachment, style: 'max-width:100%;max-height:60vh;border-radius:8px' }) : U.el('a', { href: d.approvalAttachment, target: '_blank', text: t('openFile') }),
       ]);
       C.modal(t('approvalAttachment'), body, { size: 'lg', hideFooter: true });
     }

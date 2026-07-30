@@ -13,20 +13,25 @@ async function exportToExcel({ fileName, title, sheets, lang = 'ar' }) {
   const outPath = path.join(ROOT.exports, `${safe}-${dayjs().format('YYYYMMDD-HHmmss')}.xlsx`);
   const wb = XLSX.utils.book_new();
 
-  const dataSheets = Array.isArray(sheets) ? sheets : [sheets];
+  const dataSheets = Array.isArray(sheets) ? sheets.filter(Boolean) : (sheets ? [sheets] : []);
+  if (!dataSheets.length) throw new Error('No data to export');
+
   for (const sheet of dataSheets) {
-    const columns = sheet.columns || [];
-    const rows = sheet.rows || [];
+    const columns = Array.isArray(sheet.columns) ? sheet.columns : [];
+    const rows = Array.isArray(sheet.rows) ? sheet.rows : [];
     const header = columns.map((c) => (typeof c.label === 'object' ? c.label[lang] || c.label.en : c.label));
     const body = rows.map((row) => {
       const r = {};
       for (const c of columns) r[typeof c.label === 'object' ? (c.label[lang] || c.label.en) : c.label] = row[c.key];
       return r;
     });
+    if (!body.length) continue;
     const ws = XLSX.utils.json_to_sheet(body, { header });
     ws['!cols'] = columns.map(() => ({ wch: 20 }));
     XLSX.utils.book_append_sheet(wb, ws, (sheet.name && (sheet.name[lang] || sheet.name.en)) || 'Sheet');
   }
+
+  if (!wb.SheetNames.length) throw new Error('Workbook is empty');
 
   XLSX.writeFile(wb, outPath);
   return { path: outPath, fileName: path.basename(outPath) };
@@ -67,7 +72,7 @@ async function exportToPdf({ fileName, title, meta = [], columns = [], rows = []
     page.drawText(String(text ?? ''), { x, y: yy, size, font, color: rgb(0.1, 0.1, 0.1), ...opts });
   };
 
-  draw(title[lang] || title.en || 'Report', margin, y, 16);
+  draw((title && (title[lang] || title.en)) || 'Report', margin, y, 16);
   y -= lineH;
   for (const m of meta) {
     draw((m.label[lang] || m.label.en) + ': ' + m.value, margin, y, 10);

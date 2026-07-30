@@ -18,7 +18,7 @@ const REPORT_COLUMNS = {
     { key: 'fromEntity', label: { ar: 'من', en: 'From' } },
     { key: 'deliveryStatus', label: { ar: 'الحالة', en: 'Status' } },
     { key: 'priority', label: { ar: 'الأولوية', en: 'Priority' } },
-    { key: 'receivedDate', label: { ar: 'تاريخ الاستلام', en: 'Received' } },
+    { key: 'receivedDate', label: { ar: 'تاريخ الخطاب', en: 'Letter Date' } },
   ],
   outgoing: [
     { key: 'letterNumber', label: { ar: 'الرقم', en: 'Number' } },
@@ -26,7 +26,7 @@ const REPORT_COLUMNS = {
     { key: 'sentTo', label: { ar: 'إلى', en: 'To' } },
     { key: 'deliveryStatus', label: { ar: 'الحالة', en: 'Status' } },
     { key: 'priority', label: { ar: 'الأولوية', en: 'Priority' } },
-    { key: 'sentDate', label: { ar: 'تاريخ الإرسال', en: 'Sent' } },
+    { key: 'sentDate', label: { ar: 'تاريخ الخطاب', en: 'Letter Date' } },
   ],
   departments: [
     { key: 'code', label: { ar: 'الكود', en: 'Code' } },
@@ -81,7 +81,6 @@ EG.pages.reports = {
       U.el('div', { style: 'display:flex;gap:10px;flex-wrap:wrap;margin-top:8px' }, [
         C.button(t('generateReport'), { icon: 'reports', onClick: generate }),
         C.button(t('exportExcel'), { icon: 'download', variant: 'blue', onClick: () => exportAs('excel') }),
-        C.button(t('exportPDF'), { icon: 'download', variant: 'ghost', onClick: () => exportAs('pdf') }),
         printBtn,
       ]),
     ]));
@@ -139,7 +138,10 @@ EG.pages.reports = {
         if (!rows.length) { resultBox.appendChild(C.emptyState('reports', t('emptyState'))); return; }
 
         const chartCard = buildChartCard(rows, collection);
-        if (chartCard) resultBox.appendChild(chartCard);
+        if (chartCard) {
+          chartCard.classList.add('card-enter');
+          resultBox.appendChild(chartCard);
+        }
 
         resultBox.appendChild(C.card([
           U.el('div', { class: 'card-title', html: EG.icon('reports', 18) + '<span>' + t(collection) + ' · ' + rows.length + '</span>' }),

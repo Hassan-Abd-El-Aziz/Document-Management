@@ -26,13 +26,13 @@ EG.pages.departments = {
               C.iconButton(d.enabled ? 'close' : 'check', { title: d.enabled ? t('disable') : t('enable'), variant: d.enabled ? 'warn' : 'action', onClick: async () => {
                 await EG.api.department.toggle(d._id, !d.enabled); C.toast(t('saved')); EG.router.navigate('departments');
               } }),
-              C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
+              EG.helpers.canDelete() ? C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
                 try {
                   await EG.api.department.remove(d._id);
                   C.toast(t('deleted'));
-                  EG.router.navigate('departments');
+                  render();
                 } catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
-              }) }),
+              }) }) : null,
             ]);
             return U.el('tr', {}, [
               td(d.code, 'cell-title'),
