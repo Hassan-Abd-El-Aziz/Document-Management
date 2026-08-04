@@ -1,0 +1,25 @@
+appId: com.egyptgulf.dms
+productName: Egypt Gulf DMS
+directories:
+  output: dist
+  buildResources: build
+files:
+  - "**/*"
+  - "!node_modules/.cache"
+  - "!*.log"
+  - "!dist"
+  - "!*.yml"
+  - "!*.md"
+  - "!_t_*"
+  - "!sign.js"
+win:
+  target:
+    - nsis
+  icon: assets/icons/icon.ico
+  sign: ./sign.js
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Egypt Gulf DMS

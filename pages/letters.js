@@ -148,7 +148,7 @@ EG.pages.letters = {
           td(employeeOf(item)),
           td(EG.utils.formatDate(item.createdAt, EG.state.lang), 'cell-soft'),
           td(stayDays(item) + ' ' + (stayDays(item) === 1 ? t('day') : t('days'))),
-          td('', '', C.statusBadge(item.deliveryStatus)),
+          td(C.statusBadge(item.deliveryStatus)),
           td(U.el('span', { class: 'badge', style: `background:${conf.color}22;color:${conf.color}`, text: conf.label })),
           td(item.notes || '-', 'cell-soft'),
           td(statusData(item), 'cell-soft'),
