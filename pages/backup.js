@@ -34,6 +34,9 @@ EG.pages.backup = {
               C.iconButton('restore', { title: t('restoreBackup'), variant: 'action', onClick: () => C.confirm(t('confirmRestore'), async () => {
                 try { await EG.api.backup.restore(b._id); C.toast(t('willRestart')); } catch (e2) { C.toast(EG.api.errMessage(e2), 'error'); }
               }) }),
+              C.iconButton('download', { title: t('exportBackup'), variant: 'action', onClick: async () => {
+                try { await EG.api.backup.export(b._id); C.toast(t('exported') || 'Exported'); } catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
+              } }),
               EG.helpers.canDelete() ? C.iconButton('trash', { title: t('delete'), variant: 'danger', onClick: () => C.confirm(t('confirmDelete'), async () => {
                 try { await EG.api.backup.del(b._id); C.toast(t('deleted')); EG.router.navigate('backup'); }
                 catch (e) { C.toast(EG.api.errMessage(e), 'error'); }
@@ -52,8 +55,10 @@ EG.pages.backup = {
     function runCreate() {
       const m = C.modal(t('createBackup'), U.el('div', {}, [C.loadingBlock()]), { hideFooter: true });
       EG.api.backup.create('manual').then((r) => {
+        return EG.api.backup.export(r._id);
+      }).then((zip) => {
         m.close();
-        C.toast(t('saved') + ': ' + (r.filename || r.fileName || ''));
+        C.toast((t('saved') || 'Saved') + ': ' + (zip.fileName || ''));
         EG.router.navigate('backup');
       }).catch((err) => { m.close(); C.toast(EG.api.errMessage(err), 'error'); });
     }

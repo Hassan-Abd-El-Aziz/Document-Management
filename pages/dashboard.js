@@ -39,6 +39,7 @@ EG.pages.dashboard = {
           C.button(t('newOutgoing'), { icon: 'outgoing', onClick: () => EG.router.navigate('outgoing') }),
           C.button(t('newLending'), { icon: 'archive', onClick: () => EG.router.navigate('lending') }),
           C.button(t('newDepartment'), { icon: 'departments', onClick: () => EG.router.navigate('departments') }),
+          C.button(t('qr'), { icon: 'qr', onClick: () => EG.router.navigate('qr') }),
           C.button(t('createBackup'), { icon: 'backup', variant: 'blue', onClick: () => EG.router.navigate('backup') }),
         ]),
       ]);

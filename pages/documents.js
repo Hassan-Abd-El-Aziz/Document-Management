@@ -102,6 +102,10 @@ EG.pages.documents = {
       const notes = C.textarea(existing ? existing.notes || '' : '', {});
       const documentType = C.select([{ value: 'document', label: t('document') }, { value: 'contract', label: t('contract') }], existing ? (existing.documentType || 'document') : 'document');
       const shelfLocation = C.input(existing ? (existing.shelfLocation || '') : '', {});
+      const documentDate = C.input('', { type: 'date' });
+      documentDate.value = existing && existing.documentDate ? new Date(existing.documentDate).toISOString().split('T')[0] : '';
+      const archiveDeliveryDate = C.input('', { type: 'date' });
+      archiveDeliveryDate.value = existing && existing.archiveDeliveryDate ? new Date(existing.archiveDeliveryDate).toISOString().split('T')[0] : '';
 
       const currentYear = new Date().getFullYear();
       let fileNumber = existing ? (existing.fileNumber || '') : '';
@@ -262,6 +266,10 @@ EG.pages.documents = {
           C.fieldWrap(t('documentType'), documentType),
           C.fieldWrap(t('department'), deptSel),
         ]),
+        U.el('div', { class: 'form-grid' }, [
+          C.fieldWrap(t('documentDate'), documentDate),
+          C.fieldWrap(t('archiveDeliveryDate'), archiveDeliveryDate),
+        ]),
         C.fieldWrap(t('title') + ' (AR)', titleAr),
         C.fieldWrap(t('title') + ' (EN)', titleEn),
         C.fieldWrap(t('project'), projectPicker.node),
@@ -296,6 +304,8 @@ EG.pages.documents = {
                 departmentId: '',
                 fileNumber: fileNumber,
                 documentType: documentType.value,
+                documentDate: documentDate.value || null,
+                archiveDeliveryDate: archiveDeliveryDate.value || null,
                 shelfLocation: shelfLocation.value.trim() || null,
                 priority: priority.value,
                 notes: notes.value,
@@ -330,7 +340,12 @@ EG.pages.documents = {
         ]),
       ]);
       const pm = C.modal(t('preview') || 'Preview', previewBody, {
-        footer: [C.button(t('close'), { variant: 'ghost', onClick: () => pm.close() })],
+        footer: [
+          C.button(t('downloadQr'), { icon: 'qr', variant: 'ghost', size: 'sm', onClick: async () => {
+            const safe = (doc.fileNumber || 'qr').replace(/[\\/:*?"<>|]/g, '-');
+            await EG.helpers.downloadQrCode(doc, safe + '.png');
+          } }),
+        ],
       });
     }
 

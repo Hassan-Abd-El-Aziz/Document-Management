@@ -48,6 +48,7 @@ const VALUE_COLORS = {
   low: '#64748b', medium: '#2563eb', high: '#f59e0b', urgent: '#dc2626',
 };
 const PALETTE = ['#16a34a', '#2563eb', '#f59e0b', '#dc2626', '#7c3aed', '#0891b2', '#64748b', '#db2777'];
+const ENUM_VALUE_KEYS = { priority: true, deliveryStatus: true };
 
 EG.pages.reports = {
   id: 'reports',
@@ -87,6 +88,14 @@ EG.pages.reports = {
     view.appendChild(resultBox);
 
     let lastRows = [];
+
+    function cellValue(c, val) {
+      if (val == null) return '';
+      if (c.localize) return EG.utils.localize(val, EG.state.lang);
+      if (c.key.endsWith('At') || c.key.endsWith('Date')) return EG.utils.formatDate(val, EG.state.lang);
+      if (ENUM_VALUE_KEYS[c.key]) return t(val);
+      return String(val);
+    }
 
     function chartSegments(rows, collection) {
       const cfg = REPORT_CHART[collection];
@@ -147,10 +156,7 @@ EG.pages.reports = {
           U.el('div', { class: 'card-title', html: EG.icon('reports', 18) + '<span>' + t(collection) + ' · ' + rows.length + '</span>' }),
           C.table(cols.map((c) => c.label[EG.state.lang] || c.label.en), rows, {
             renderRow: (row) => U.el('tr', {}, cols.map((c) => {
-              let val = row[c.key];
-              if (c.localize) val = EG.utils.localize(val, EG.state.lang);
-              else if (c.key.endsWith('At') || c.key.endsWith('Date')) val = EG.utils.formatDate(val, EG.state.lang);
-              return U.el('td', { text: String(val ?? '') });
+              return U.el('td', { text: cellValue(c, row[c.key]) });
             })),
           }),
         ]));
@@ -161,12 +167,7 @@ EG.pages.reports = {
     function mapRows(rows, cols) {
       return rows.map((r) => {
         const o = {};
-        cols.forEach((c) => {
-          let val = r[c.key];
-          if (c.localize) val = EG.utils.localize(val, EG.state.lang);
-          else if (c.key.endsWith('At') || c.key.endsWith('Date')) val = EG.utils.formatDate(val, EG.state.lang);
-          o[c.key] = val == null ? '' : val;
-        });
+        cols.forEach((c) => { o[c.key] = cellValue(c, r[c.key]); });
         return o;
       });
     }

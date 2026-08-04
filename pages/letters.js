@@ -45,12 +45,6 @@ EG.pages.letters = {
       return { label: t('normal'), color: 'var(--green)' };
     }
 
-    function completion(item) {
-      if (item.deliveryStatus === 'delivered' || item.deliveryStatus === 'rejected' || item.deliveryStatus === 'cancelled') return 100;
-      const steps = (item.history || []).length;
-      return Math.min(90, Math.max(10, steps * 25));
-    }
-
     function lastMovement(item) {
       const h = item.history || [];
       return h.length ? h[h.length - 1] : null;
@@ -64,6 +58,18 @@ EG.pages.letters = {
     function employeeOf(item) {
       if (item.kind === 'incoming') return item.receivedBy || '-';
       return item.receiver || item.deliveredBy || '-';
+    }
+
+    function statusData(item) {
+      const lang = EG.state.lang;
+      if (item.kind === 'incoming') {
+        const who = item.receivedBy || '-';
+        const when = item.receivedDate ? EG.utils.formatDate(item.receivedDate, lang) : '';
+        return when ? (who + ' · ' + when) : who;
+      }
+      const who = item.receiver || item.deliveredBy || '-';
+      const when = item.deliveryDate ? EG.utils.formatDate(item.deliveryDate, lang) : '';
+      return when ? (who + ' · ' + when) : who;
     }
 
     function stayDays(item) {
@@ -83,6 +89,7 @@ EG.pages.letters = {
       { value: '', label: t('all') },
       { value: 'pending', label: t('pending') },
       { value: 'delivered', label: t('delivered') },
+      { value: 'received', label: t('received') },
       { value: 'rejected', label: t('rejected') },
       { value: 'cancelled', label: t('cancelled') },
     ], '');
@@ -103,13 +110,6 @@ EG.pages.letters = {
       return U.el('span', { style: `display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-inline-end:8px;flex-shrink:0` });
     }
 
-    function progressBar(pct, color) {
-      return U.el('div', { class: 'mini-progress' }, [
-        U.el('div', { class: 'mini-progress-fill', style: `width:${pct}%;background:${color}` }),
-        U.el('span', { class: 'mini-progress-label', text: pct + '%' }),
-      ]);
-    }
-
     function render() {
       const q = searchIn.value.trim().toLowerCase();
       const ftype = typeSel.value;
@@ -121,7 +121,7 @@ EG.pages.letters = {
         if (fstatus && d.deliveryStatus !== fstatus) return false;
         if (fdept && (d.departmentCode || 'GEN') !== fdept) return false;
         if (q) {
-          const hay = [d.letterNumber, d.subject, entityOf(d), d.fileNumber, (d.tags || []).join(' ')].join(' ').toLowerCase();
+          const hay = [d.letterNumber, d.subject, entityOf(d), d.fileNumber, employeeOf(d), t(d.deliveryStatus), (d.tags || []).join(' ')].join(' ').toLowerCase();
           if (!hay.includes(q)) return false;
         }
         return true;
@@ -129,13 +129,12 @@ EG.pages.letters = {
 
       const columns = [
         t('regNo'), t('letterNo'), t('letterType'), t('incoming'), t('outgoing'), t('entity'),
-        t('currentDept'), t('currentEmployee'), t('createdDate'), t('lastMovement'),
-        t('stayDuration'), t('status'), t('completion'), t('confidentiality'), t('priority'), t('details'),
+        t('currentDept'), t('currentEmployee'), t('createdDate'), t('stayDuration'),
+        t('status'), t('confidentiality'), t('notes'), t('statusData'),
       ];
 
       const body = rows.length ? C.table(columns, rows, { renderRow: (item) => {
         const color = levelColor(item);
-        const lm = lastMovement(item);
         const conf = confidentiality(item);
         const td = (children, cls) => U.el('td', { class: cls || '' }, Array.isArray(children) ? children : [children]);
         return U.el('tr', {}, [
@@ -148,13 +147,11 @@ EG.pages.letters = {
           td(item.departmentCode || 'GEN'),
           td(employeeOf(item)),
           td(EG.utils.formatDate(item.createdAt, EG.state.lang), 'cell-soft'),
-          td(lm ? (t(lm.action) || lm.action) + ' · ' + EG.utils.relTime(lm.at, EG.state.lang) : '-', 'cell-soft'),
           td(stayDays(item) + ' ' + (stayDays(item) === 1 ? t('day') : t('days'))),
           td('', '', C.statusBadge(item.deliveryStatus)),
-          td(progressBar(completion(item), color), ''),
           td(U.el('span', { class: 'badge', style: `background:${conf.color}22;color:${conf.color}`, text: conf.label })),
-          td('', '', C.priorityBadge(item.priority)),
-          td('', '', C.iconButton('history', { title: t('details'), onClick: () => openDrawer(item) })),
+          td(item.notes || '-', 'cell-soft'),
+          td(statusData(item), 'cell-soft'),
         ]);
       } }) : C.emptyState('inbox', t('noResults'));
 

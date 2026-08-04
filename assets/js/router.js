@@ -8,7 +8,7 @@ EG.router = (function () {
   let currentId = null;
 
   const navItems = [
-    'dashboard', 'departments', 'documents', 'incoming', 'outgoing', 'letters', 'recycle', 'reports', 'backup', 'lending', 'users', 'logs', 'search', 'settings',
+    'dashboard', 'departments', 'documents', 'incoming', 'outgoing', 'letters', 'recycle', 'reports', 'backup', 'lending', 'users', 'logs', 'search', 'settings', 'qr',
   ];
 
   function buildNav(active) {

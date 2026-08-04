@@ -53,6 +53,8 @@ EG.pages.outgoing = {
       const notes = C.textarea('', {});
       const letterDate = C.input('', { type: 'date' });
       letterDate.value = new Date().toISOString().split('T')[0];
+      const archiveDeliveryDate = C.input('', { type: 'date' });
+      archiveDeliveryDate.value = '';
 
       const currentYear = new Date().getFullYear();
       const TYPE_LABEL = 'OL';
@@ -116,6 +118,20 @@ EG.pages.outgoing = {
         U.el('span', { class: 'cell-soft', style: 'font-size:11px', text: existing ? t('editLetterNumber') : t('suggestedLetterNumber') }),
       ]);
 
+      async function validateUnique(fn, excludeId) {
+        if (!fn) return true;
+        try {
+          let query = 'letterNumber == $0 AND departmentCode == $1 AND deleted == false';
+          const args = [fn, deptInput.value.trim()];
+          if (excludeId) {
+            query += ' AND _id != $2';
+            args.push(excludeId);
+          }
+          const existing = await EG.api.outgoing.list(query, args);
+          return existing.length === 0;
+        } catch (_) { return true; }
+      }
+
       let filePath = null;
       const fileLabel = U.el('span', { class: 'cell-soft' });
       const body = U.el('div', {}, [
@@ -123,6 +139,7 @@ EG.pages.outgoing = {
         C.fieldWrap(t('letterNumber'), letterNumberInput),
         letterNumberRow,
         C.fieldWrap(t('letterDate'), letterDate),
+        C.fieldWrap(t('archiveDeliveryDate'), archiveDeliveryDate),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('subject') + ' (AR)', subAr), C.fieldWrap(t('subject') + ' (EN)', subEn)]),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('to'), sentTo), C.fieldWrap(t('from'), from)]),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('department'), deptSel), C.fieldWrap(t('receivedBy'), deliveredBy)]),
@@ -138,8 +155,24 @@ EG.pages.outgoing = {
             if (!subAr.value.trim()) { C.toast(t('fillRequired'), 'error'); return; }
             const letterNumber = letterNumberInput.value.trim();
             if (!letterNumber) { C.toast('Please enter a letter number', 'error'); return; }
+            const isUnique = await validateUnique(letterNumber, existing ? existing._id : null);
+            if (!isUnique) { C.toast(t('numberExistsOutgoing'), 'error'); return; }
             try {
-              await EG.api.outgoing.create({ letterNumber, subject: { ar: subAr.value.trim() || subEn.value.trim(), en: subEn.value.trim() || subAr.value.trim() }, sentTo: sentTo.value, fromEntity: from.value, departmentCode: deptInput.value.trim() || 'GEN', deliveredBy: deliveredBy.value, priority: priority.value, deliveryStatus: status.value, notes: notes.value, sentDate: letterDate.value, fileSrc: filePath });
+              const payload = {
+                letterNumber,
+                subject: { ar: subAr.value.trim() || subEn.value.trim(), en: subEn.value.trim() || subAr.value.trim() },
+                sentTo: sentTo.value,
+                fromEntity: from.value,
+                departmentCode: deptInput.value.trim() || 'GEN',
+                deliveredBy: deliveredBy.value,
+                priority: priority.value,
+                deliveryStatus: status.value,
+                notes: notes.value,
+                sentDate: letterDate.value,
+                archiveDeliveryDate: archiveDeliveryDate.value || null,
+                fileSrc: filePath,
+              };
+              await EG.api.outgoing.create(payload);
               m.close(); C.toast(t('created')); EG.router.navigate('outgoing');
             } catch (e2) { C.toast(EG.api.errMessage(e2), 'error'); }
           } }),
@@ -173,6 +206,8 @@ EG.pages.outgoing = {
       const notes = C.textarea(d.notes || '', {});
       const letterDate = C.input('', { type: 'date' });
       letterDate.value = d.sentDate ? new Date(d.sentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      const archiveDeliveryDate = C.input('', { type: 'date' });
+      archiveDeliveryDate.value = d.archiveDeliveryDate ? new Date(d.archiveDeliveryDate).toISOString().split('T')[0] : '';
       let filePath = d.filePath || null;
       const fileLabel = U.el('span', { class: 'cell-soft', text: filePath ? filePath.split(/[\\/]/).pop() : '' });
 
@@ -233,11 +268,26 @@ EG.pages.outgoing = {
         U.el('span', { class: 'cell-soft', style: 'font-size:11px', text: t('editLetterNumber') }),
       ]);
 
+      async function validateUnique(fn, excludeId) {
+        if (!fn) return true;
+        try {
+          let query = 'letterNumber == $0 AND departmentCode == $1 AND deleted == false';
+          const args = [fn, deptInput.value.trim()];
+          if (excludeId) {
+            query += ' AND _id != $2';
+            args.push(excludeId);
+          }
+          const existing = await EG.api.outgoing.list(query, args);
+          return existing.length === 0;
+        } catch (_) { return true; }
+      }
+
       const body = U.el('div', {}, [
         U.el('div', { style: 'display:flex;gap:10px;align-items:center;margin-bottom:14px' }, [C.button(t('upload'), { icon: 'upload', variant: 'ghost', onClick: async () => { filePath = await EG.helpers.filePick(); if (filePath) fileLabel.textContent = filePath.split(/[\\/]/).pop(); } }), fileLabel]),
         C.fieldWrap(t('letterNumber'), letterNumberInput),
         letterNumberRow,
         C.fieldWrap(t('letterDate'), letterDate),
+        C.fieldWrap(t('archiveDeliveryDate'), archiveDeliveryDate),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('subject') + ' (AR)', subAr), C.fieldWrap(t('subject') + ' (EN)', subEn)]),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('to'), sentTo), C.fieldWrap(t('from'), from)]),
         U.el('div', { class: 'form-grid' }, [C.fieldWrap(t('department'), deptSel), C.fieldWrap(t('receivedBy'), deliveredBy)]),
@@ -255,8 +305,10 @@ EG.pages.outgoing = {
             if (!subAr.value.trim()) { C.toast(t('fillRequired'), 'error'); return; }
             const letterNumber = letterNumberInput.value.trim();
             if (!letterNumber) { C.toast('Please enter a letter number', 'error'); return; }
+            const isUnique = await validateUnique(letterNumber, d._id);
+            if (!isUnique) { C.toast(t('numberExistsOutgoing'), 'error'); return; }
             try {
-              await EG.api.outgoing.update(d._id, { letterNumber, subject: { ar: subAr.value.trim() || subEn.value.trim(), en: subEn.value.trim() || subAr.value.trim() }, sentTo: sentTo.value, fromEntity: from.value, departmentCode: deptInput.value.trim() || 'GEN', deliveredBy: deliveredBy.value, priority: priority.value, deliveryStatus: status.value, notes: notes.value, sentDate: letterDate.value, fileSrc: filePath });
+              await EG.api.outgoing.update(d._id, { letterNumber, subject: { ar: subAr.value.trim() || subEn.value.trim(), en: subEn.value.trim() || subAr.value.trim() }, sentTo: sentTo.value, fromEntity: from.value, departmentCode: deptInput.value.trim() || 'GEN', deliveredBy: deliveredBy.value, priority: priority.value, deliveryStatus: status.value, notes: notes.value, sentDate: letterDate.value, archiveDeliveryDate: archiveDeliveryDate.value || null, fileSrc: filePath });
               m.close(); C.toast(t('saved')); EG.router.navigate('outgoing');
             } catch (e2) { C.toast(EG.api.errMessage(e2), 'error'); }
           } }),
@@ -289,6 +341,7 @@ EG.pages.outgoing = {
         metaRow(t('receiver'), d.receiver || '-'),
         metaRow(t('priority'), '' , C.statusBadge(d.priority || 'medium')),
         metaRow(t('date'), EG.utils.formatDate(d.sentDate, EG.state.lang)),
+        d.archiveDeliveryDate ? metaRow(t('archiveDeliveryDate'), EG.utils.formatDate(d.archiveDeliveryDate, EG.state.lang)) : null,
       ]);
       const body = U.el('div', {}, [
         details,
@@ -346,6 +399,7 @@ EG.pages.outgoing = {
         metaRow(t('status'), '' , C.statusBadge(d.deliveryStatus)),
         metaRow(t('priority'), '' , C.priorityBadge(d.priority)),
         metaRow(t('date'), EG.utils.formatDate(d.sentDate, EG.state.lang)),
+        d.archiveDeliveryDate ? metaRow(t('archiveDeliveryDate'), EG.utils.formatDate(d.archiveDeliveryDate, EG.state.lang)) : null,
         d.receiver ? metaRow(t('receiver'), d.receiver) : null,
         d.notes ? metaRow(t('notes'), d.notes) : null,
       ]);
@@ -368,7 +422,15 @@ EG.pages.outgoing = {
       }
 
       const body = U.el('div', {}, [meta, U.el('h4', { style: 'margin:18px 0 10px', text: t('preview') }), preview]);
-      C.modal(d.letterNumber || t('preview'), body, { size: 'xl', hideFooter: true });
+      C.modal(d.letterNumber || t('preview'), body, {
+        size: 'xl',
+        footer: [
+          C.button(t('downloadQr'), { icon: 'qr', variant: 'ghost', size: 'sm', onClick: async () => {
+            const safe = (d.letterNumber || 'qr').replace(/[\\/:*?"<>|]/g, '-');
+            await EG.helpers.downloadQrCode(d, safe + '.png');
+          } }),
+        ],
+      });
 
       function metaRow(label, value, node) {
         return U.el('div', { class: 'meta-row' }, [

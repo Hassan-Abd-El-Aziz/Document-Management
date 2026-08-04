@@ -1,7 +1,7 @@
 'use strict';
 
 const { getRealm } = require('../database/realm');
-const { serialize, serializeList } = require('../utils/serialize');
+const { serializeList } = require('../utils/serialize');
 const { COLLECTIONS } = require('../config/constants');
 
 function localize(value, lang) {
@@ -57,39 +57,58 @@ function advancedSearch({ collection, filters = {}, lang = 'ar' }) {
     departments: COLLECTIONS.DEPARTMENTS,
   };
   const col = collectionMap[collection] || collection;
-  const args = {};
+  const args = [];
   const parts = [];
   const isDepartment = col === COLLECTIONS.DEPARTMENTS;
+  const isLetter = col === COLLECTIONS.INCOMING || col === COLLECTIONS.OUTGOING;
+  const isDoc = col === COLLECTIONS.DOCUMENTS;
+
   if (!isDepartment) parts.push('deleted == false');
-  if (filters.departmentCode) { parts.push('departmentCode == $dc'); args.$dc = filters.departmentCode; }
-  if (filters.projectName) { parts.push('projectName CONTAINS[c] $pn'); args.$pn = String(filters.projectName); }
-  if (filters.status) { parts.push('deliveryStatus == $st'); args.$st = filters.status; }
-  if (filters.priority) { parts.push('priority == $pr'); args.$pr = filters.priority; }
-  if (filters.fromDate && filters.toDate) {
-    if (col === COLLECTIONS.INCOMING) {
-      parts.push('receivedDate >= $from AND receivedDate <= $to');
-    } else if (col === COLLECTIONS.OUTGOING) {
-      parts.push('sentDate >= $from AND sentDate <= $to');
-    } else {
-      parts.push('createdAt >= $from AND createdAt <= $to');
+
+  const n = (value) => { const i = args.length; args.push(value); return '$' + i; };
+
+  if (isDepartment) {
+    if (filters.code) { parts.push(`code CONTAINS[c] ${n(String(filters.code))}`); }
+    if (filters.name) { parts.push(`name CONTAINS[c] ${n(String(filters.name))}`); }
+  } else if (isLetter) {
+    if (filters.departmentCode) { parts.push(`departmentCode == ${n(String(filters.departmentCode))}`); }
+    if (filters.projectName) { parts.push(`projectName CONTAINS[c] ${n(String(filters.projectName))}`); }
+    if (filters.status) { parts.push(`deliveryStatus == ${n(String(filters.status))}`); }
+    if (filters.priority) { parts.push(`priority == ${n(String(filters.priority))}`); }
+    if (filters.number) { parts.push(`letterNumber CONTAINS[c] ${n(String(filters.number))}`); }
+    if (filters.subject) { parts.push(`subject CONTAINS[c] ${n(String(filters.subject))}`); }
+    if (filters.fromEntity) { parts.push(`fromEntity CONTAINS[c] ${n(String(filters.fromEntity))}`); }
+    if (filters.toEntity) { parts.push(`toEntity CONTAINS[c] ${n(String(filters.toEntity))}`); }
+    if (filters.sentTo) { parts.push(`sentTo CONTAINS[c] ${n(String(filters.sentTo))}`); }
+  } else if (isDoc) {
+    if (filters.departmentCode) { parts.push(`departmentCode == ${n(String(filters.departmentCode))}`); }
+    if (filters.projectName) { parts.push(`projectName CONTAINS[c] ${n(String(filters.projectName))}`); }
+    if (filters.fileNumber) { parts.push(`fileNumber CONTAINS[c] ${n(String(filters.fileNumber))}`); }
+    if (filters.subject) { parts.push(`title CONTAINS[c] ${n(String(filters.subject))}`); }
+    if (filters.keyword) {
+      const kw = n(String(filters.keyword));
+      parts.push(`(notes CONTAINS[c] ${kw} OR title CONTAINS[c] ${kw} OR fileNumber CONTAINS[c] ${kw})`);
     }
-    args.$from = new Date(filters.fromDate);
-    args.$to = new Date(filters.toDate);
   }
-  if (filters.number) { parts.push('letterNumber CONTAINS[c] $ln'); args.$ln = String(filters.number); }
-  if (filters.subject) { parts.push('subject CONTAINS[c] $su'); args.$su = String(filters.subject); }
-  if (isLetter) {
-    if (filters.fromEntity) { parts.push('fromEntity CONTAINS[c] $fe'); args.$fe = String(filters.fromEntity); }
-    if (filters.toEntity) { parts.push('toEntity CONTAINS[c] $te'); args.$te = String(filters.toEntity); }
-  } else if (filters.keyword) {
-    parts.push('(notes CONTAINS[c] $kw OR subject CONTAINS[c] $kw OR title CONTAINS[c] $kw)');
-    args.$kw = String(filters.keyword);
+
+  if (filters.fromDate && filters.toDate) {
+    const from = new Date(filters.fromDate + 'T00:00:00');
+    const to = new Date(filters.toDate + 'T00:00:00');
+    to.setDate(to.getDate() + 1);
+    const op = (field) => `${field} >= ${n(from)} AND ${field} < ${n(to)}`;
+    if (col === COLLECTIONS.INCOMING) {
+      parts.push(op('receivedDate'));
+    } else if (col === COLLECTIONS.OUTGOING) {
+      parts.push(op('sentDate'));
+    } else {
+      parts.push(op('createdAt'));
+    }
   }
+
   const query = parts.length ? parts.join(' AND ') : 'TRUEPREDICATE';
-  const argsValues = Object.values(args || {});
-  const results = argsValues.length ? realm.objects(col).filtered(query, ...argsValues) : realm.objects(col).filtered(query);
+  const results = realm.objects(col).filtered(query, ...args);
   const sortField = col === COLLECTIONS.INCOMING ? 'receivedDate' : col === COLLECTIONS.OUTGOING ? 'sentDate' : 'createdAt';
-  return serialize(results.sorted(sortField, true));
+  return serializeList(results.sorted(sortField, true));
 }
 
 module.exports = { searchGlobal, advancedSearch, localize };

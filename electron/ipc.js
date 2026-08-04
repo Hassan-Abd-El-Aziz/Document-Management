@@ -10,6 +10,7 @@ const repo = require('../database/repository');
 const { serialize, serializeList } = require('../utils/serialize');
 const constants = require('../config/constants');
 const { COLLECTIONS, ROOT } = constants;
+const QRCode = require('qrcode');
 
 const auth = require('../services/authService');
 const settings = require('../services/settingsService');
@@ -439,14 +440,15 @@ async function handle({ action, payload = {} }) {
           departmentId: payload.departmentId || null,
           departmentCode: payload.departmentCode || 'GEN',
           receivedDate: payload.receivedDate ? new Date(payload.receivedDate) : new Date(),
-          deliveryStatus: 'pending',
+          archiveDeliveryDate: payload.archiveDeliveryDate ? new Date(payload.archiveDeliveryDate) : null,
+          deliveryStatus: payload.deliveryStatus || 'pending',
           priority: payload.priority || 'medium',
           receivedBy: payload.receivedBy || '',
           attachments: payload.attachments || [],
           filePath: fileMeta.filePath || null,
           notes: payload.notes || '',
           tags: payload.tags || [],
-          history: [{ action: 'created', status: 'pending', by: auth.getSession() ? auth.getSession().username : null, at: new Date(), note: '' }],
+          history: [{ action: 'created', status: payload.deliveryStatus || 'pending', by: auth.getSession() ? auth.getSession().username : null, at: new Date(), note: '' }],
           deleted: false,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -478,7 +480,9 @@ async function handle({ action, payload = {} }) {
       }
       case 'incoming.update': {
         auth.requirePermission('incoming:write');
-        const rec = repo.update(COLLECTIONS.INCOMING, payload.id, { ...payload.data, updatedAt: new Date() });
+        const upd = { ...payload.data, updatedAt: new Date() };
+        if ('archiveDeliveryDate' in upd) upd.archiveDeliveryDate = upd.archiveDeliveryDate ? new Date(upd.archiveDeliveryDate) : null;
+        const rec = repo.update(COLLECTIONS.INCOMING, payload.id, upd);
         audit.audit('update', 'incoming', payload.id, auditMsg('update', 'incoming'));
         try { notify.generateSystemReminders(); } catch (_) {}
         return ok(rec);
@@ -547,6 +551,7 @@ async function handle({ action, payload = {} }) {
           departmentId: payload.departmentId || null,
           departmentCode: payload.departmentCode || 'GEN',
           sentDate: payload.sentDate ? new Date(payload.sentDate) : new Date(),
+          archiveDeliveryDate: payload.archiveDeliveryDate ? new Date(payload.archiveDeliveryDate) : null,
           deliveryStatus: 'pending',
           priority: payload.priority || 'medium',
           deliveredBy: payload.deliveredBy || '',
@@ -596,7 +601,9 @@ async function handle({ action, payload = {} }) {
       }
       case 'outgoing.update': {
         auth.requirePermission('outgoing:write');
-        const rec = repo.update(COLLECTIONS.OUTGOING, payload.id, { ...payload.data, updatedAt: new Date() });
+        const upd = { ...payload.data, updatedAt: new Date() };
+        if ('archiveDeliveryDate' in upd) upd.archiveDeliveryDate = upd.archiveDeliveryDate ? new Date(upd.archiveDeliveryDate) : null;
+        const rec = repo.update(COLLECTIONS.OUTGOING, payload.id, upd);
         audit.audit('update', 'outgoing', payload.id, auditMsg('update', 'outgoing'));
         try { notify.generateSystemReminders(); } catch (_) {}
         return ok(rec);
@@ -664,7 +671,19 @@ async function handle({ action, payload = {} }) {
         return ok(await backup.restoreBackup(payload.id));
       case 'backup.restoreFile':
         auth.requirePermission('backup:write');
-        return ok(await backup.restoreBackup(payload.id));
+        return ok(await backup.restoreFromPath(payload.path));
+      case 'backup.export': {
+        auth.requirePermission('backup:write');
+        const zip = await backup.exportBackup(payload.id);
+        const win = BrowserWindow.getFocusedWindow();
+        const res = await dialog.showSaveDialog(win, {
+          defaultPath: zip.fileName,
+          filters: [{ name: 'Backup', extensions: ['zip'] }],
+        });
+        if (res.canceled || !res.filePath) return ok({ canceled: true });
+        await fs.copyFileSync(zip.path, res.filePath);
+        return ok({ path: res.filePath, fileName: path.basename(res.filePath) });
+      }
       case 'backup.delete':
         auth.requirePermission('backup:write');
         return ok(await backup.deleteBackup(payload.id));
@@ -922,6 +941,11 @@ async function handle({ action, payload = {} }) {
         return ok(emailLog.restore(payload.id));
       case 'emailLog.stats':
         return ok(emailLog.stats());
+      case 'qr.generate': {
+        const text = typeof payload === 'string' ? payload : JSON.stringify(payload);
+        const dataUrl = await QRCode.toDataURL(text, { width: 600, margin: 2 });
+        return ok(dataUrl);
+      }
 
       default:
         throw new Error('UNKNOWN_ACTION:' + action);

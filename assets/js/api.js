@@ -106,6 +106,7 @@ EG.api = (function () {
       list: () => invoke('backup.list'),
       restore: (id) => invoke('backup.restore', { id }),
       restoreFile: (p) => invoke('backup.restoreFile', { path: p }),
+      export: (id) => invoke('backup.export', { id }),
       del: (id) => invoke('backup.delete', { id }),
     },
     lending: {
@@ -138,6 +139,7 @@ EG.api = (function () {
       clear: () => invoke('logs.clear'),
     },
     stats: { dashboard: () => invoke('stats.dashboard') },
+    qr: { generate: (d) => invoke('qr.generate', d) },
     file: {
       pick: (o) => invoke('file.pick', o),
       open: (p) => invoke('file.open', { path: p }),

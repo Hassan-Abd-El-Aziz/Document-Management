@@ -113,7 +113,7 @@ EG.app = (function () {
   async function showLogin(isLock) {
     const screen = U.el('div', { class: 'login-screen' });
     const card = U.el('div', { class: 'login-card' });
-    card.appendChild(U.el('div', { class: 'login-logo', text: 'EGGEEC' }));
+    card.appendChild(U.el('div', { class: 'login-logo', text: 'H' }));
     card.appendChild(U.el('div', { class: 'login-title', text: t('loginTitle') }));
     const err = U.el('div', { class: 'login-error' });
     const userIn = C.input('', { type: 'text', placeholder: t('username') });

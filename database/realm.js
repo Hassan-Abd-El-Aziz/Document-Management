@@ -30,7 +30,7 @@ async function initDatabase() {
   realmInstance = await Realm.open({
     path: path.join(ROOT.realm, 'egypt-gulf.realm'),
     schema: schemas,
-    schemaVersion: 10,
+    schemaVersion: 11,
     migration: (oldRealm, newRealm) => {
       const oldVersion = oldRealm.schemaVersion;
       if (oldVersion < 7) {
@@ -64,7 +64,7 @@ async function initDatabase() {
         }
       }
       if (oldVersion < 9) {
-        const lendings = newRealm.objects('Lending');
+        const lendings = oldRealm.objects('Lending');
         newRealm.write(() => {
           for (const lending of lendings) {
             lending.previousDocumentLocation = lending.previousDocumentLocation || null;
@@ -72,10 +72,27 @@ async function initDatabase() {
         });
       }
       if (oldVersion < 10) {
-        const lendings = newRealm.objects('Lending');
+        const lendings = oldRealm.objects('Lending');
         newRealm.write(() => {
           for (const lending of lendings) {
             lending.lendingType = lending.lendingType || 'borrowed';
+          }
+        });
+      }
+      if (oldVersion < 11) {
+        const documents = newRealm.objects('Document');
+        const incoming = newRealm.objects('IncomingLetter');
+        const outgoing = newRealm.objects('OutgoingLetter');
+        newRealm.write(() => {
+          for (const doc of documents) {
+            if (doc.properties.includes('documentDate')) doc.documentDate = doc.documentDate || null;
+            if (doc.properties.includes('archiveDeliveryDate')) doc.archiveDeliveryDate = doc.archiveDeliveryDate || null;
+          }
+          for (const letter of incoming) {
+            if (letter.properties.includes('archiveDeliveryDate')) letter.archiveDeliveryDate = letter.archiveDeliveryDate || null;
+          }
+          for (const letter of outgoing) {
+            if (letter.properties.includes('archiveDeliveryDate')) letter.archiveDeliveryDate = letter.archiveDeliveryDate || null;
           }
         });
       }

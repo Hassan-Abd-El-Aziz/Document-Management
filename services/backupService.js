@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const archiver = require('archiver');
 const { ROOT, COLLECTIONS } = require('../config/constants');
 const { getRealm } = require('../database/realm');
 const { serialize, serializeList } = require('../utils/serialize');
@@ -223,6 +224,32 @@ async function deleteBackup(id) {
   return true;
 }
 
+async function exportBackup(id) {
+  const realm = getRealm();
+  const res = realm.objects(COLLECTIONS.BACKUPS).filtered('_id == $0', new (require('realm').BSON.UUID)(id));
+  if (!res.length) throw new Error('BACKUP_NOT_FOUND');
+  const backup = serialize(res[0]);
+
+  if (!fs.existsSync(backup.path)) throw new Error('BACKUP_FOLDER_NOT_FOUND:' + backup.path);
+
+  const stamp = new Date().toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
+  const zipName = `backup_${backup.type || 'manual'}_${stamp}.zip`;
+  const zipPath = path.join(ROOT.exports, zipName);
+  if (!fs.existsSync(ROOT.exports)) fs.mkdirSync(ROOT.exports, { recursive: true });
+
+  const output = fs.createWriteStream(zipPath);
+  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  return new Promise((resolve, reject) => {
+    output.on('close', () => resolve({ path: zipPath, fileName: zipName, size: archive.pointer() }));
+    archive.on('error', (err) => reject(err));
+    archive.pipe(output);
+
+    archive.directory(backup.path, false);
+    archive.finalize();
+  });
+}
+
 function initialize() {
   ensureInitialized();
 }
@@ -234,4 +261,5 @@ module.exports = {
   restoreBackup,
   restoreFromPath,
   deleteBackup,
+  exportBackup,
 };
