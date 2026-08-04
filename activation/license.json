@@ -1,0 +1,18 @@
+{
+  "activated": true,
+  "machineId": "4976ae2c55001917d7b0f1c5c64db915f7528c2be235c96eaa42cd5fd5f5e578",
+  "activationCode": "Hassan01009039628",
+  "activatedAt": "2026-08-04T17:37:06.473Z",
+  "machineInfo": {
+    "machineId": "4976ae2c55001917d7b0f1c5c64db915f7528c2be235c96eaa42cd5fd5f5e578",
+    "hostname": "DESKTOP-I1L3QQJ",
+    "platform": "win32",
+    "arch": "x64",
+    "cpus": 8,
+    "totalMemory": "8 GB",
+    "macAddresses": [
+      "ec:5c:68:11:68:ef",
+      "ec:5c:68:11:68:ef"
+    ]
+  }
+}

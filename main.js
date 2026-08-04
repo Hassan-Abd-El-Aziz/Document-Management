@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const cron = require('node-cron');
 
@@ -9,8 +9,10 @@ const { registerIPC } = require('./electron/ipc');
 const backup = require('./services/backupService');
 const notify = require('./services/notificationService');
 const settings = require('./services/settingsService');
+const activation = require('./services/activationService');
 
 let mainWindow = null;
+let activationWindow = null;
 let backupJob = null;
 let urgentJob = null;
 let dailyReminderJob = null;
@@ -35,6 +37,34 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
   mainWindow.once('ready-to-show', () => mainWindow.show());
   mainWindow.on('closed', () => { mainWindow = null; });
+}
+
+function createActivationWindow() {
+  activationWindow = new BrowserWindow({
+    width: 500,
+    height: 620,
+    minWidth: 420,
+    minHeight: 580,
+    resizable: false,
+    fullscreenable: false,
+    show: false,
+    backgroundColor: '#f4f6f8',
+    title: 'Egypt Gulf DMS - التفعيل',
+    titleBarStyle: 'default',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  });
+
+  activationWindow.loadFile(path.join(__dirname, 'activation.html'));
+  activationWindow.once('ready-to-show', () => activationWindow.show());
+  activationWindow.on('closed', () => {
+    activationWindow = null;
+    if (mainWindow) mainWindow.show();
+  });
 }
 
 function getAppTitle() {
@@ -109,30 +139,67 @@ function setupAutoLock() {
 
 async function boot() {
   await app.whenReady();
-  await initDatabase();
-  backup.initialize();
   registerIPC();
-  createWindow();
-  scheduleBackups();
-  scheduleUrgentAlerts();
-  scheduleDailyReminders();
-  try { notify.generateSystemReminders(); } catch (_) {}
-  try { notify.generateUrgentFollowups(); } catch (_) {}
-  setupAutoLock();
+
+  ipcMain.on('eg:activationSuccess', async () => {
+    if (activationWindow) {
+      activationWindow.close();
+      activationWindow = null;
+    }
+    try { await initDatabase(); } catch (_) {}
+    backup.initialize();
+    if (mainWindow) {
+      mainWindow.show();
+    } else {
+      createWindow();
+    }
+    scheduleBackups();
+    scheduleUrgentAlerts();
+    scheduleDailyReminders();
+    try { notify.generateSystemReminders(); } catch (_) {}
+    try { notify.generateUrgentFollowups(); } catch (_) {}
+    setupAutoLock();
+  });
+
+  if (activation.isActivated()) {
+    await initDatabase();
+    backup.initialize();
+    createWindow();
+    scheduleBackups();
+    scheduleUrgentAlerts();
+    scheduleDailyReminders();
+    try { notify.generateSystemReminders(); } catch (_) {}
+    try { notify.generateUrgentFollowups(); } catch (_) {}
+    setupAutoLock();
+  } else {
+    createActivationWindow();
+  }
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      if (activation.isActivated()) {
+        if (mainWindow) {
+          mainWindow.show();
+        } else {
+          createWindow();
+        }
+      } else {
+        createActivationWindow();
+      }
+    }
   });
 }
 
 app.on('window-all-closed', () => {
-  try {
-    const cfg = settings.getSettings();
-    if (cfg.backupOnExitEnabled !== false) {
-      backup.createBackup({ type: 'auto', note: 'Auto-backup on exit' });
+  if (activation.isActivated()) {
+    try {
+      const cfg = settings.getSettings();
+      if (cfg.backupOnExitEnabled !== false) {
+        backup.createBackup({ type: 'auto', note: 'Auto-backup on exit' });
+      }
+    } catch (err) {
+      console.error('Auto-backup on exit failed:', err);
     }
-  } catch (err) {
-    console.error('Auto-backup on exit failed:', err);
   }
   closeDatabase();
   if (process.platform !== 'darwin') app.quit();

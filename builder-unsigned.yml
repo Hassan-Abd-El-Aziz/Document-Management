@@ -17,9 +17,3 @@ win:
     - nsis
   icon: assets/icons/icon.ico
   sign: ./sign.js
-nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
-  createDesktopShortcut: true
-  createStartMenuShortcut: true
-  shortcutName: Egypt Gulf DMS

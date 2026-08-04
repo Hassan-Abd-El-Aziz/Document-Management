@@ -9,6 +9,12 @@ const api = {
   onAutoLock(callback) {
     ipcRenderer.on('eg:autoLock', () => callback());
   },
+  onActivationSuccess(callback) {
+    ipcRenderer.on('eg:activationSuccess', () => callback());
+  },
+  sendActivationSuccess() {
+    ipcRenderer.send('eg:activationSuccess');
+  },
   platform: process.platform,
 };
 

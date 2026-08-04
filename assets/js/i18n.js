@@ -384,6 +384,19 @@ EG.i18n = (function () {
       cancel: 'إلغاء',
       fillRequired: 'الرجاء ملء الحقول المطلوبة',
       saved: 'تم الحفظ',
+      activationTitle: 'تفعيل البرنامج',
+      activationSubtitle: 'أدخل رمز التفعيل لتفعيل البرنامج على هذا الجهاز',
+      activationCodeLabel: 'رمز التفعيل',
+      activationCodePlaceholder: 'أدخل رمز التفعيل',
+      activateBtn: 'تفعيل الآن',
+      activationCodeRequired: 'الرجاء إدخال رمز التفعيل',
+      activationFailed: 'فشل التفعيل',
+      activationInvalid: 'رمز التفعيل غير صالح',
+      activationError: 'حدث خطأ',
+      activationSuccess: 'تم تفعيل البرنامج بنجاح',
+      activationHint: 'هذا الرمز مرتبط بجهاز واحد فقط. نقل البرنامج إلى جهاز آخر يتطلب تفعيلًا من جديد.',
+      machineIdLabel: 'معرف الجهاز',
+      machineNameLabel: 'اسم الجهاز',
     },
     en: {
       appName: 'DMS',
@@ -668,6 +681,19 @@ EG.i18n = (function () {
       cancel: 'Cancel',
       fillRequired: 'Please fill required fields',
       saved: 'Saved',
+      activationTitle: 'Activate the Program',
+      activationSubtitle: 'Enter your activation code to activate the program on this device',
+      activationCodeLabel: 'Activation Code',
+      activationCodePlaceholder: 'Enter activation code',
+      activateBtn: 'Activate Now',
+      activationCodeRequired: 'Please enter the activation code',
+      activationFailed: 'Activation failed',
+      activationInvalid: 'Invalid activation code',
+      activationError: 'An error occurred',
+      activationSuccess: 'Program activated successfully',
+      activationHint: 'This code is tied to a single device. Moving the program to another device requires re-activation.',
+      machineIdLabel: 'Device ID',
+      machineNameLabel: 'Device Name',
       backupFolder: 'Backup Folder',
       documentFolder: 'Document Folder',
       sessionTimeout: 'Session Timeout (min)',
@@ -820,7 +846,7 @@ EG.i18n = (function () {
     current = lang;
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    EG.state.lang = lang;
+    if (EG.state) EG.state.lang = lang;
     applyStatic();
   }
 

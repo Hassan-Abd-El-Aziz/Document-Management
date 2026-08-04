@@ -14,6 +14,7 @@ const QRCode = require('qrcode');
 
 const auth = require('../services/authService');
 const settings = require('../services/settingsService');
+const activation = require('../services/activationService');
 const numbering = require('../services/numberingService');
 const fileSvc = require('../services/fileService');
 const audit = require('../services/auditService');
@@ -102,6 +103,20 @@ async function handle({ action, payload = {} }) {
         return ok(auth.setPin(payload.pin));
       case 'auth.verifyPin':
         return ok({ valid: auth.verifyPin(payload.pin) });
+
+      /* ---------- ACTIVATION ---------- */
+      case 'activation.status':
+        return ok(activation.getActivationStatus());
+      case 'activation.activate': {
+        const result = activation.activate(payload.code);
+        if (!result.ok) throw new Error(result.error || 'INVALID_CODE');
+        return ok(result.data);
+      }
+      case 'activation.deactivate':
+        return ok(activation.deactivate());
+      case 'activation.isActivated':
+        return ok(activation.isActivated());
+
       case 'auth.users':
         auth.requirePermission('users:read');
         return ok(repo.listCollection(COLLECTIONS.USERS));

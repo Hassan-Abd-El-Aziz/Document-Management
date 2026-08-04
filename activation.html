@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Egypt Gulf DMS - التفعيل</title>
+  <link rel="stylesheet" href="assets/css/base.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/activation.css" />
+</head>
+<body>
+  <div class="activation-screen">
+    <div class="activation-card">
+      <div class="activation-logo">
+        <div class="activation-logo-icon">H</div>
+      </div>
+      <h1 class="activation-title" data-i18n="activationTitle">تفعيل البرنامج</h1>
+      <p class="activation-subtitle" data-i18n="activationSubtitle">أدخل رمز التفعيل لتفعيل البرنامج على هذا الجهاز</p>
+
+      <div class="activation-machine-info">
+        <div class="machine-info-row">
+          <span class="machine-info-label" data-i18n="machineIdLabel">معرف الجهاز</span>
+          <span class="machine-info-value" id="machineIdDisplay">-</span>
+        </div>
+        <div class="machine-info-row">
+          <span class="machine-info-label" data-i18n="machineNameLabel">اسم الجهاز</span>
+          <span class="machine-info-value" id="machineName">-</span>
+        </div>
+      </div>
+
+      <form id="activationForm" class="activation-form">
+        <div class="field">
+          <span class="field-label" data-i18n="activationCodeLabel">رمز التفعيل</span>
+          <input type="text" id="activationCode" class="input" data-i18n-placeholder="activationCodePlaceholder" placeholder="أدخل رمز التفعيل" autocomplete="off" />
+        </div>
+        <div class="activation-error" id="activationError"></div>
+        <button type="submit" class="btn btn-primary activation-btn" id="activateBtn">
+          <span class="btn-icon" id="activateBtnIcon"></span>
+          <span data-i18n="activateBtn">تفعيل الآن</span>
+        </button>
+      </form>
+
+      <div class="activation-footer">
+        <p class="activation-hint" data-i18n="activationHint">هذا الرمز مرتبط بجهاز واحد فقط. نقل البرنامج إلى جهاز آخر يتطلب تفعيلًا من جديد.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/activation.js"></script>
+</body>
+</html>
