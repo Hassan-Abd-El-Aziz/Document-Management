@@ -1,9 +1,9 @@
 {
-  "name": "egypt-gulf-dms",
-  "productName": "Egypt Gulf Document Management System",
+  "name": "dms",
+  "productName": "DMS",
   "version": "1.0.0",
   "description": "Modern, offline-first desktop document management system for corporate archives, correspondence and departments.",
-  "author": "Egypt Gulf",
+  "author": "DMS",
   "license": "MIT",
   "main": "main.js",
   "type": "commonjs",
@@ -34,8 +34,8 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.egyptgulf.dms",
-    "productName": "Egypt Gulf DMS",
+    "appId": "com.dms.app",
+    "productName": "DMS",
     "directories": {
       "output": "dist",
       "buildResources": "assets"

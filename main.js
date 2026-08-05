@@ -49,7 +49,7 @@ function createActivationWindow() {
     fullscreenable: false,
     show: false,
     backgroundColor: '#f4f6f8',
-    title: 'Egypt Gulf DMS - التفعيل',
+    title: 'DMS - التفعيل',
     titleBarStyle: 'default',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -70,10 +70,10 @@ function createActivationWindow() {
 function getAppTitle() {
   try {
     const s = settings.getSettings();
-    const name = s.companyName && (s.companyName.ar || s.companyName.en) ? (s.companyName.ar || s.companyName.en) : 'Egypt Gulf';
+    const name = s.companyName && (s.companyName.ar || s.companyName.en) ? (s.companyName.ar || s.companyName.en) : 'DMS';
     return name + ' - إدارة الوثائق';
   } catch (_) {
-    return 'Egypt Gulf - إدارة الوثائق';
+    return 'DMS - إدارة الوثائق';
   }
 }
 
@@ -206,7 +206,7 @@ app.on('window-all-closed', () => {
 });
 
 boot().catch((e) => {
-  console.error('Failed to start Egypt Gulf DMS:', e);
+  console.error('Failed to start DMS:', e);
 });
 
 module.exports = { scheduleBackups, scheduleUrgentAlerts, scheduleDailyReminders };

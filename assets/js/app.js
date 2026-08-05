@@ -238,7 +238,7 @@ EG.app = (function () {
   function updateAppTitle() {
     try {
       const s = settings || EG.state.settings || {};
-      const name = s.companyName && (s.companyName.ar || s.companyName.en) ? (EG.utils.localize(s.companyName, EG.state.lang) || s.companyName.en) : (t('appName') || 'Egypt Gulf');
+      const name = s.companyName && (s.companyName.ar || s.companyName.en) ? (EG.utils.localize(s.companyName, EG.state.lang) || s.companyName.en) : (t('appName') || 'DMS');
       const sub = t('appSub') || 'إدارة الوثائق';
       const brandName = document.getElementById('brandName');
       const brandSub = document.getElementById('brandSub');

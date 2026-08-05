@@ -5,7 +5,7 @@ const { THEME, LANG, ROLES } = require('./constants');
 const DEFAULT_SETTINGS = {
   theme: THEME.SYSTEM,
   language: LANG.AR,
-  companyName: { ar: 'شركة الخليج مصر', en: 'Egypt Gulf Company' },
+  companyName: { ar: 'DMS', en: 'DMS' },
   companyAddress: '',
   companyPhone: '',
   companyLogo: '',

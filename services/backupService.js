@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
+const extract = require('extract-zip');
 const { ROOT, COLLECTIONS } = require('../config/constants');
 const { getRealm } = require('../database/realm');
 const { serialize, serializeList } = require('../utils/serialize');
@@ -165,51 +166,74 @@ async function restoreBackup(id) {
 
 async function restoreFromPath(backupPath) {
   if (!fs.existsSync(backupPath)) throw new Error('BACKUP_PATH_NOT_FOUND:' + backupPath);
-  const folder = fs.lstatSync(backupPath).isDirectory() ? backupPath : null;
-  if (!folder) throw new Error('BACKUP_PATH_IS_NOT_FOLDER:' + backupPath);
+  const isDir = fs.lstatSync(backupPath).isDirectory();
+  let folder = null;
+  let tempDir = null;
 
-  const realm = getRealm();
-  const res = realm.objects(COLLECTIONS.BACKUPS).filtered('path == $0', folder);
-  const backup = res.length ? serialize(res[0]) : { path: folder };
-
-  try {
-    realmModule.closeDatabase();
-  } catch (_) {}
-
-  const dbDir = realmDir();
-  const files = fs.readdirSync(folder);
-  for (const file of files) {
-    const src = path.join(folder, file);
-    const dest = path.join(dbDir, file);
-    if (fs.lstatSync(src).isFile()) {
-      fs.copyFileSync(src, dest);
-    }
+  if (isDir) {
+    folder = backupPath;
+  } else if (/\.zip$/i.test(backupPath)) {
+    tempDir = path.join(ROOT.temp, 'restore-' + Date.now());
+    fs.mkdirSync(tempDir, { recursive: true });
+    await extract(backupPath, { dir: tempDir });
+    folder = tempDir;
+  } else {
+    throw new Error('BACKUP_PATH_IS_NOT_FOLDER:' + backupPath);
   }
 
-  const storageDir = ROOT.storage;
-  const storageBackup = path.join(folder, 'storage');
-  if (fs.existsSync(storageBackup)) {
-    const entries = fs.readdirSync(storageBackup, { withFileTypes: true });
-    for (const entry of entries) {
-      const src = path.join(storageBackup, entry.name);
-      const dest = path.join(storageDir, entry.name);
-      if (entry.isDirectory()) {
-        if (fs.existsSync(dest)) fs.rmSync(dest, { recursive: true, force: true });
-        fs.mkdirSync(dest, { recursive: true });
-        copyDirRecursive(src, dest);
-      } else if (entry.isFile()) {
+  try {
+    const realm = getRealm();
+    const res = realm.objects(COLLECTIONS.BACKUPS).filtered('path == $0', folder);
+    const backup = res.length ? serialize(res[0]) : { path: folder };
+
+    try {
+      realmModule.closeDatabase();
+    } catch (_) {}
+
+    const dbDir = realmDir();
+    const files = fs.readdirSync(folder);
+    for (const file of files) {
+      const src = path.join(folder, file);
+      const dest = path.join(dbDir, file);
+      if (fs.lstatSync(src).isFile()) {
         fs.copyFileSync(src, dest);
       }
     }
-  }
 
-  try {
-    realmModule.initDatabase();
+    const storageDir = ROOT.storage;
+    const storageBackup = path.join(folder, 'storage');
+    if (fs.existsSync(storageBackup)) {
+      const entries = fs.readdirSync(storageBackup, { withFileTypes: true });
+      for (const entry of entries) {
+        const src = path.join(storageBackup, entry.name);
+        const dest = path.join(storageDir, entry.name);
+        if (entry.isDirectory()) {
+          if (fs.existsSync(dest)) fs.rmSync(dest, { recursive: true, force: true });
+          fs.mkdirSync(dest, { recursive: true });
+          copyDirRecursive(src, dest);
+        } else if (entry.isFile()) {
+          fs.copyFileSync(src, dest);
+        }
+      }
+    }
+
+    try {
+      realmModule.initDatabase();
+    } catch (e) {
+      throw new Error('RESTORE_INIT_FAILED:' + (e && e.message ? e.message : String(e)));
+    }
+
+    if (tempDir) {
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
+    }
+
+    return { success: true };
   } catch (e) {
-    throw new Error('RESTORE_INIT_FAILED:' + (e && e.message ? e.message : String(e)));
+    if (tempDir) {
+      try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (_) {}
+    }
+    throw e;
   }
-
-  return { success: true };
 }
 
 async function deleteBackup(id) {
