@@ -19,7 +19,10 @@ EG.pages.settings = {
     const companyEn = C.input(s.companyName && s.companyName.en ? s.companyName.en : '', {});
     const addr = C.input(s.companyAddress || '', {});
     const phone = C.input(s.companyPhone || '', {});
-    const reqLogin = checkbox(s.requireLogin);
+    const reqLogin = checkbox(true);
+    reqLogin.querySelector('input').disabled = true;
+    reqLogin.style.opacity = '0.7';
+    reqLogin.style.pointerEvents = 'none';
     const autoLock = checkbox(s.autoLockEnabled);
     const pinLock = checkbox(s.pinLockEnabled);
     const timeout = C.input(s.sessionTimeoutMinutes || 15, { type: 'number' });
@@ -88,7 +91,7 @@ EG.pages.settings = {
         companyName: { ar: companyAr.value.trim(), en: companyEn.value.trim() },
         companyAddress: addr.value,
         companyPhone: phone.value,
-        requireLogin: reqLogin.querySelector('input').checked,
+        requireLogin: true,
         autoLockEnabled: autoLock.querySelector('input').checked,
         sessionTimeoutMinutes: Number(timeout.value) || 15,
         pinLockEnabled: pinLock.querySelector('input').checked,

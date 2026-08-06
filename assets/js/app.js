@@ -14,7 +14,7 @@ EG.app = (function () {
     try {
       settings = await EG.api.settings.get();
     } catch (_) {
-      settings = { theme: 'system', language: 'ar', requireLogin: false };
+      settings = { theme: 'system', language: 'ar', requireLogin: true };
     }
     EG.state.settings = settings;
     EG.i18n.setLang(settings.language || 'ar');
@@ -30,14 +30,14 @@ EG.app = (function () {
     updateStorageMeter();
     updateAppTitle();
 
-    if (settings.requireLogin && !session) {
+    if (!session) {
       showLogin();
     } else {
       EG.router.navigate('dashboard');
     }
 
     window.eg.onAutoLock(() => {
-      if (settings.requireLogin) showLogin(true);
+      showLogin(true);
     });
   }
 
@@ -94,20 +94,20 @@ EG.app = (function () {
   }
 
   function showUserMenu() {
-    if (settings.requireLogin && session) {
-      C.modal(t('profile'), U.el('div', {}, [
-        U.el('p', { text: EG.utils.localize(session.fullName, EG.state.lang) }),
-        U.el('p', { class: 'cell-soft', text: session.username + ' · ' + t(session.role) }),
-      ]), {
-        footer: [C.button(t('logout'), { variant: 'danger', icon: 'lock', onClick: async () => {
-          await EG.api.auth.logout().catch(() => {});
-          session = null; EG.state.user = null; renderUserChip();
-          if (settings.requireLogin) showLogin(); else location.reload();
-        } })],
-      });
-    } else {
+    if (!session) {
       showLogin();
+      return;
     }
+    C.modal(t('profile'), U.el('div', {}, [
+      U.el('p', { text: EG.utils.localize(session.fullName, EG.state.lang) }),
+      U.el('p', { class: 'cell-soft', text: session.username + ' · ' + t(session.role) }),
+    ]), {
+      footer: [C.button(t('logout'), { variant: 'danger', icon: 'lock', onClick: async () => {
+        await EG.api.auth.logout().catch(() => {});
+        session = null; EG.state.user = null; renderUserChip();
+        showLogin();
+      } })],
+    });
   }
 
   async function showLogin(isLock) {

@@ -44,10 +44,10 @@ function hasPermission(action) {
 }
 
 function requirePermission(action) {
-  const settings = require('./settingsService').getSettings();
-  if (!currentSession && !settings.requireLogin) return true;
-  if (!hasPermission(action)) throw new Error('PERMISSION_DENIED:' + action);
-  return true;
+  if (!currentSession) throw new Error('PERMISSION_DENIED:' + action);
+  const perms = PERMISSIONS[currentSession.role] || [];
+  if (perms.includes('*')) return true;
+  return perms.includes(action) || perms.some((p) => p.endsWith(':*') && action.startsWith(p.split(':')[0] + ':'));
 }
 
 function verifyPin(pin) {

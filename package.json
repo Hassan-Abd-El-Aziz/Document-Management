@@ -38,25 +38,42 @@
     "productName": "DMS",
     "directories": {
       "output": "dist",
-      "buildResources": "assets"
+      "buildResources": "build"
     },
     "files": [
-      "**/*",
-      "!node_modules/.cache",
-      "!*.log"
+      "main.js",
+      "preload.js",
+      "index.html",
+      "activation.html",
+      "assets/**/*",
+      "pages/**/*",
+      "services/**/*",
+      "database/**/*",
+      "electron/**/*",
+      "utils/**/*",
+      "config/**/*",
+      "node_modules/**/*",
+      "*.js",
+      "*.html",
+      "*.json"
     ],
     "win": {
       "target": "nsis",
-      "icon": "assets/icons/icon.ico"
+      "icon": "icons/icon.ico"
+    },
+    "nsis": {
+      "installerIcon": "installer-icon.ico",
+      "uninstallerIcon": "installer-icon.ico"
     },
     "mac": {
       "target": "dmg",
-      "icon": "assets/icons/icon.icns"
+      "icon": "icons/icon.icns"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "assets/icons/icon.png"
+      "icon": "icons/icon.png"
     },
-    "npmRebuild": true
+    "npmRebuild": true,
+    "asar": true
   }
 }

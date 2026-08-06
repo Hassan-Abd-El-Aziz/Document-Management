@@ -138,6 +138,15 @@ EG.api = (function () {
       list: (l, o) => invoke('logs.list', { limit: l, offset: o }),
       clear: () => invoke('logs.clear'),
     },
+    emailLog: {
+      list: (q) => invoke('emailLog.list', { query: q || {} }),
+      get: (id) => invoke('emailLog.get', { id }),
+      create: (d) => invoke('emailLog.create', d),
+      update: (id, d) => invoke('emailLog.update', { id, data: d }),
+      remove: (id) => invoke('emailLog.remove', { id }),
+      restore: (id) => invoke('emailLog.restore', { id }),
+      stats: () => invoke('emailLog.stats'),
+    },
     stats: { dashboard: () => invoke('stats.dashboard') },
     qr: { generate: (d) => invoke('qr.generate', d) },
     file: {

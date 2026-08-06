@@ -31,6 +31,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      webSecurity: false,
     },
   });
 
@@ -56,6 +57,7 @@ function createActivationWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
+      webSecurity: false,
     },
   });
 
